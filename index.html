@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHUNITHM 定数表 → 譜面保管所リンカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Fugaz+One&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0c14;
+    --bg2:#10131f;
+    --panel:#161a2b;
+    --panel2:#1d2238;
+    --line:#2a3050;
+    --text:#e7ecff;
+    --muted:#8b93b8;
+    --cyan:#34e7e4;
+    --pink:#ff3d8b;
+    --exp:#e8493b;     /* EXPERT 赤 */
+    --mas:#9b53e0;     /* MASTER 紫 */
+    --ult-a:#d4203a;   /* ULTIMA 赤 */
+    --ult-b:#1a0608;   /* ULTIMA 黒 */
+    /* ULTIMA 赤黒の斜めストライプ */
+    --ult-stripe:repeating-linear-gradient(45deg,#d4203a 0 7px,#160305 7px 14px);
+    --ult-stripe-sm:repeating-linear-gradient(45deg,#d4203a 0 4px,#160305 4px 8px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(52,231,228,.10), transparent 60%),
+      radial-gradient(1000px 500px at 0% 0%, rgba(255,61,139,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Zen Kaku Gothic New",system-ui,sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--cyan)}
+
+  /* ---- header ---- */
+  header{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(12px);
+    background:linear-gradient(180deg, rgba(10,12,20,.92), rgba(10,12,20,.72));
+    border-bottom:1px solid var(--line);
+  }
+  .bar{max-width:1400px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;flex-direction:column;line-height:1}
+  .brand .t{font-family:"Zen Dots",sans-serif;font-size:20px;letter-spacing:.5px;
+    background:linear-gradient(92deg,var(--cyan),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand .s{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.4px}
+
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto}
+  .search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:999px;padding:8px 14px;min-width:220px}
+  .search input{background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:14px;width:100%}
+  .search svg{flex:none;opacity:.6}
+
+  .diffs{display:flex;gap:6px}
+  .chip{cursor:pointer;user-select:none;font-size:12px;font-weight:700;letter-spacing:.5px;
+    padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.15s}
+  .chip[data-on="1"]{color:#fff}
+  .chip.exp[data-on="1"]{background:rgba(232,73,59,.18);border-color:var(--exp);box-shadow:0 0 0 1px var(--exp) inset}
+  .chip.mas[data-on="1"]{background:rgba(155,83,224,.20);border-color:var(--mas);box-shadow:0 0 0 1px var(--mas) inset}
+  .chip.ult[data-on="1"]{color:#fff;border:2px solid transparent;
+    background:
+      linear-gradient(rgba(212,32,58,.18),rgba(212,32,58,.18)) padding-box,
+      var(--ult-stripe-sm) border-box;}
+  .chip.sm[data-on="1"]{background:rgba(52,231,228,.16);border-color:var(--cyan);color:#fff;box-shadow:0 0 0 1px var(--cyan) inset}
+
+  .btn{cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;color:var(--text);
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;transition:.15s}
+  .btn:hover{border-color:var(--cyan);color:#fff}
+  .btn.warn{border-color:var(--pink);color:#ffb8d4}
+
+  /* ---- status strip ---- */
+  .status{max-width:1400px;margin:0 auto;padding:10px 20px 0;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+  .status b{color:var(--cyan);font-weight:700}
+  .status .nomap{color:var(--pink)}
+
+  /* ---- main grid ---- */
+  main{max-width:1400px;margin:0 auto;padding:18px 20px 80px}
+  .levblock{margin:22px 0}
+  .levhead{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .levhead .num{font-family:"Zen Dots",sans-serif;font-size:26px;color:#fff;
+    text-shadow:0 0 18px rgba(52,231,228,.35)}
+  .levhead .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:14px}
+  @media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}
+
+  .tile{position:relative;border:none;background:none;padding:0;cursor:pointer;text-align:left;font-family:inherit;
+    display:flex;flex-direction:column;gap:7px;transition:transform .12s}
+  @media(hover:hover){.tile:hover{transform:translateY(-3px)}}
+  .tile:active{transform:scale(.97)}
+  .tile:disabled{cursor:not-allowed}
+  .jacket{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;
+    border:3px solid var(--line);background:var(--panel);
+    box-shadow:0 6px 18px rgba(0,0,0,.45)}
+  .jacket img{width:100%;height:100%;object-fit:cover;display:block}
+  .jacket.noimg{display:flex;align-items:center;justify-content:center}
+  .jacket.noimg::after{content:attr(data-name);font-size:11px;color:var(--muted);padding:8px;text-align:center;line-height:1.3;-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+  .tile.exp .jacket{border-color:var(--exp)}
+  .tile.mas .jacket{border-color:var(--mas)}
+  .tile.ult .jacket{
+    border-color:transparent;
+    background:
+      linear-gradient(var(--panel),var(--panel)) padding-box,
+      var(--ult-stripe) border-box;
+    box-shadow:0 6px 18px rgba(0,0,0,.5);
+  }
+  @media(hover:hover){.tile:hover .jacket{box-shadow:0 10px 26px rgba(0,0,0,.55),0 0 22px rgba(52,231,228,.25)}}
+
+  .badge{position:absolute;left:6px;top:6px;font-size:10px;font-weight:900;letter-spacing:.5px;
+    padding:2px 6px;border-radius:5px;color:#fff;line-height:1.2}
+  .badge.exp{background:var(--exp)}
+  .badge.mas{background:var(--mas)}
+  .badge.ult{background:var(--ult-stripe-sm);text-shadow:0 0 3px #000,0 1px 2px #000;border:1px solid rgba(0,0,0,.5)}
+  .cst{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:900;color:#fff;
+    background:rgba(0,0,0,.66);padding:2px 6px;border-radius:5px;backdrop-filter:blur(2px)}
+
+  /* unmatched overlay */
+  .tile.nolink .jacket::after{content:"";position:absolute;inset:0;background:rgba(8,9,16,.55)}
+  .tile.nolink .jacket{filter:grayscale(.55)}
+  .nolinktag{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;font-weight:700;
+    color:#ffd2e2;background:rgba(20,6,14,.85);border:1px solid var(--pink);border-radius:6px;padding:3px 7px;white-space:nowrap}
+
+  .ttl{font-size:12px;line-height:1.35;color:var(--text);    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+  /* ジャケット暗幕（ランク/スコア表示時） */
+  .jacket.dim img{filter:brightness(.5)}
+  /* ランク特大オーバーレイ */
+  .rankbig{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
+    font-family:"Fugaz One","Dela Gothic One",cursive;font-style:normal;font-weight:400;
+    font-size:42px;line-height:1;letter-spacing:0;pointer-events:none}
+  .rankbig.rk-sssp{font-size:34px}
+  /* スコア数値オーバーレイ */
+  .scorebig{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
+    font-family:"Fugaz One","Dela Gothic One",cursive;font-weight:400;font-size:20px;letter-spacing:.3px;
+    padding:0 6px;text-align:center;pointer-events:none}
+  /* ランク4区分の色（指定通り） */
+  .rk-sssp{color:#ffffff;-webkit-text-stroke:1.5px #c9a227;text-shadow:0 2px 3px rgba(0,0,0,.55)}   /* SSS+ 白 */
+  .rk-sss {color:#ffe14a;-webkit-text-stroke:1.5px #ffffff;text-shadow:0 2px 3px rgba(0,0,0,.5)}    /* SSS 白ぶち黄 */
+  .rk-ss  {color:#ffd21f;-webkit-text-stroke:1.2px #7a5600;text-shadow:0 2px 3px rgba(0,0,0,.55)}   /* SS+〜S 黄 */
+  .rk-low {color:#79d4ff;-webkit-text-stroke:1.2px #0d3b57;text-shadow:0 2px 3px rgba(0,0,0,.55)}   /* S未満 青〜水色 */
+  .scorebig.rk-sss{color:#ffe14a;-webkit-text-stroke:.8px #ffffff}
+  .scorebig.rk-ss{-webkit-text-stroke:.8px #7a5600}
+  .scorebig.rk-low{-webkit-text-stroke:.8px #0d3b57}
+  .scorebig.rk-sssp{-webkit-text-stroke:.8px #c9a227}
+  /* AJC/AJ/FC ランプ（ジャケット左下） */
+  .lamp{position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:900;letter-spacing:.5px;z-index:3;
+    padding:2px 6px;border-radius:5px;color:#fff;line-height:1.2;border:1px solid rgba(0,0,0,.45);
+    text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .lamp-fc{background:#2c7be5}
+  .lamp-aj{background:linear-gradient(135deg,#e8b100,#ffd84a);color:#3a2a00;text-shadow:none}
+  .lamp-ajc{background:linear-gradient(120deg,#ff4d4d,#ffd24d,#4dff88,#4dd2ff,#b84dff);
+    background-size:200% 100%;animation:ajc 3s linear infinite;color:#fff}
+  @keyframes ajc{to{background-position:200% 0}}
+
+  /* ---- modal ---- */
+  .scrim{position:fixed;inset:0;z-index:100;background:rgba(4,5,10,.72);backdrop-filter:blur(4px);
+    display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+  .scrim[data-open="1"]{display:flex}
+  .modal{width:min(760px,100%);background:var(--bg2);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .modal .mh{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .modal .mh h2{margin:0;font-family:"Zen Dots",sans-serif;font-size:16px;color:#fff}
+  .modal .mb{padding:22px}
+  .modal h3{margin:18px 0 8px;font-size:14px;color:var(--cyan)}
+  .modal h3:first-child{margin-top:0}
+  .modal p,.modal li{font-size:13px;color:#c7cdf0;line-height:1.7}
+  .modal ol{padding-left:20px;margin:6px 0}
+  .codewrap{position:relative}
+  pre.code{background:#070912;border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#bfe9ff;white-space:pre;line-height:1.55}
+  .copy{position:absolute;right:10px;top:10px}
+  textarea.paste{width:100%;min-height:120px;background:#070912;border:1px solid var(--line);border-radius:10px;
+    padding:12px;color:var(--text);font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .ok{color:var(--cyan)} .bad{color:var(--pink)}
+  .close{cursor:pointer;background:none;border:none;color:var(--muted);font-size:22px;line-height:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  a.bmlet{display:inline-block;cursor:grab;text-decoration:none;font-weight:700;font-size:14px;
+    color:#fff;background:linear-gradient(92deg,var(--cyan),var(--pink));
+    padding:10px 18px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+  a.bmlet:active{cursor:grabbing}
+  .modal input[type="password"]{flex:1 1 220px;min-width:0;background:#070912;border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-family:ui-monospace,monospace;font-size:14px;padding:8px 10px}
+  .modal input[type="password"]:focus{outline:none;border-color:var(--cyan)}
+  details.howto{margin:8px 0 4px;font-size:13px;color:#c7cdf0}
+  details.howto summary{cursor:pointer;color:var(--cyan)}
+  details.howto code{background:#070912;padding:1px 5px;border-radius:4px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:200;max-width:min(92vw,520px);
+    background:#10131f;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1}
+  .toast.bad{border-color:var(--pink)}
+  .btn.bmcopy{margin-left:8px;font-size:12px;padding:6px 10px;vertical-align:middle}
+  .modal input[type="number"]{background:#070912;border:1px solid var(--line);border-radius:8px;color:var(--text);
+    font-family:inherit;font-size:14px;padding:6px 8px;margin-left:4px}
+  .modal select{background:#070912;border:1px solid var(--line);border-radius:8px;color:var(--text);
+    font-family:inherit;font-size:14px;padding:6px 26px 6px 10px;margin-left:4px;cursor:pointer}
+  .modal select:focus{outline:none;border-color:var(--cyan)}
+  .range-row{align-items:center;gap:8px}
+  .range-row select{margin-left:0}
+  .range-sep{color:var(--muted);font-size:16px;font-weight:700}
+  .modal label{font-size:13px;color:#c7cdf0}
+  .genre-box{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .gchip{cursor:pointer;user-select:none;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.15s}
+  .gchip[data-on="1"]{background:rgba(52,231,228,.16);border-color:var(--cyan);color:#fff}
+
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;    min-height:50vh;text-align:center;color:var(--muted)}
+  .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--cyan);
+    animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  /* ===== スマホ・タブレット最適化 ===== */
+  /* タップターゲットを広めに（hover不可＝タッチ端末） */
+  @media(hover:none){
+    .chip,.gchip{padding:10px 14px}
+    .btn{padding:10px 14px}
+    .tile{ -webkit-tap-highlight-color:transparent; }
+  }
+  /* タブレット〜小型ノート */
+  @media(max-width:900px){
+    .bar{padding:12px 14px;gap:12px}
+    main{padding:14px 14px 80px}
+    .status{padding:10px 14px 0}
+  }
+  /* スマホ（縦） */
+  @media(max-width:600px){
+    .bar{gap:10px}
+    .brand .t{font-size:17px}
+    .brand .s{font-size:10px;margin-top:4px}
+    .controls{width:100%;margin-left:0;gap:8px;flex-wrap:wrap}
+    .search{order:-1;width:100%;min-width:0;flex:1 1 100%}
+    .diffs{flex:1 1 auto}
+    .diffs .chip{flex:1 1 0;text-align:center}
+    #filterBtn,#setupBtn{flex:1 1 auto;text-align:center}
+    .status{font-size:11px;gap:10px}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+    .levhead .num{font-size:22px}
+    .ttl{font-size:11px}
+    /* モーダルを全面に近づけて操作しやすく */
+    .scrim{padding:0;align-items:stretch}
+    .modal{width:100%;min-height:100%;border-radius:0}
+    .modal .mh{position:sticky;top:0;background:var(--bg2);z-index:2}
+    .modal .mb{padding:16px}
+    .range-row{flex-wrap:nowrap}
+    .modal select,.modal input[type="number"],.modal input[type="password"]{font-size:16px} /* iOSの自動ズーム防止(16px以上) */
+    .search input{font-size:16px}
+    pre.code{font-size:11px}
+    a.bmlet{width:100%;text-align:center}
+  }
+  /* 極小幅 */
+  @media(max-width:360px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <span class="t">CHUNITHM × sdvx.in</span>
+      <span class="s">定数表のジャケットから譜面保管所へ飛ぶ</span>
+    </div>
+    <div class="controls">
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="曲名・アーティストで検索…" autocomplete="off">
+      </label>
+      <div class="diffs" id="diffs">
+        <span class="chip exp" data-d="EXP" data-on="0">EXP</span>
+        <span class="chip mas" data-d="MAS" data-on="1">MAS</span>
+        <span class="chip ult" data-d="ULT" data-on="1">ULT</span>
+      </div>
+      <div class="diffs" id="scoreModeBox" title="ジャケットに表示する内容">
+        <span class="chip sm" data-m="rank" data-on="0">ランク</span>
+        <span class="chip sm" data-m="score" data-on="0">スコア</span>
+        <span class="chip sm" data-m="off" data-on="1">OFF</span>
+      </div>
+      <button class="btn" id="filterBtn">⛃ 絞り込み</button>
+      <button class="btn warn" id="setupBtn">⚙ 設定</button>
+    </div>
+  </div>
+  <div class="status" id="status"></div>
+</header>
+
+<main id="main">
+  <div class="center">
+    <div class="spin"></div>
+    <div>定数表データを読み込んでいます…</div>
+  </div>
+</main>
+
+<!-- filter panel -->
+<div class="scrim" id="fscrim">
+  <div class="modal">
+    <div class="mh">
+      <h2>絞り込み</h2>
+      <button class="close" id="fclose">×</button>
+    </div>
+    <div class="mb">
+      <h3>譜面定数</h3>
+      <div class="row range-row">
+        <select id="cmin"><option value="">指定なし</option></select>
+        <span class="range-sep">〜</span>
+        <select id="cmax"><option value="">指定なし</option></select>
+      </div>
+      <p class="hint">データに存在する定数だけが並びます。片方だけの指定も可。</p>
+
+      <h3>ジャンル</h3>
+      <div id="genreBox" class="genre-box"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="genreAll">全部ON</button>
+        <button class="btn" id="genreNone">全部OFF</button>
+      </div>
+
+      <h3>バージョン</h3>
+      <div id="verBox" class="genre-box"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="verAll">全部ON</button>
+        <button class="btn" id="verNone">全部OFF</button>
+      </div>
+
+      <h3>スコア（ランプ）</h3>
+      <div id="lampBox" class="genre-box">
+        <span class="gchip" data-l="AJC" data-on="1">AJC</span>
+        <span class="gchip" data-l="AJ" data-on="1">AJ</span>
+        <span class="gchip" data-l="FC" data-on="1">FC</span>
+        <span class="gchip" data-l="none" data-on="1">ランプ無し</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="lampAll">全部ON</button>
+        <button class="btn" id="lampNone">全部OFF</button>
+      </div>
+
+      <h3>スコア（ランク区分）</h3>
+      <div id="rankBox" class="genre-box">
+        <span class="gchip" data-r="rk-sssp" data-on="1">SSS+</span>
+        <span class="gchip" data-r="rk-sss" data-on="1">SSS</span>
+        <span class="gchip" data-r="rk-ss" data-on="1">SS+〜S</span>
+        <span class="gchip" data-r="rk-low" data-on="1">S未満</span>
+        <span class="gchip" data-r="none" data-on="1">スコア無し</span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="rankAll">全部ON</button>
+        <button class="btn" id="rankNone">全部OFF</button>
+      </div>
+
+      <h3>スコア（数値範囲）</h3>
+      <div class="row range-row">
+        <input type="number" id="smin" step="1000" min="0" max="1010000" placeholder="下限 例 1005000" style="width:150px">
+        <span class="range-sep">〜</span>
+        <input type="number" id="smax" step="1000" min="0" max="1010000" placeholder="上限" style="width:120px">
+      </div>
+      <p class="hint">スコアを読み込んでいる譜面だけが対象です。範囲を使うと、スコア無しは除外されます。</p>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn" id="fapply">この条件で表示</button>
+        <button class="btn" id="freset">条件をリセット</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- setup modal -->
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <div class="mh">
+      <h2>設定</h2>
+      <button class="close" id="closeBtn">×</button>
+    </div>
+    <div class="mb">
+      <h3 style="margin-top:0">端末間の同期（GitHub Gist）</h3>
+      <p>設定すると、どれか1台で対応表・スコア・定数表データを読み込んだときに、自動であなたのGitHubの<b>Gist</b>（クラウド）へ保存されます。他の端末ではツールを開いたときに最新版を取り込みます。<b>各端末で1回だけ</b>トークンを貼り付けてください。</p>
+      <details class="howto"><summary>トークンの作り方（最初の1回だけ）</summary>
+        <ol>
+          <li>PCで <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">GitHub のトークン設定</a> を開く（右上アイコン → Settings → Developer settings → Personal access tokens → Tokens (classic)）</li>
+          <li>「Generate new token」→「Generate new token (classic)」</li>
+          <li>Note に「chuni-sync」など、Expiration は「No expiration」（または1年）、スコープは <b>gist だけ</b>にチェック</li>
+          <li>「Generate token」→ 表示された <code>ghp_…</code> をコピー（この画面でしか表示されないので、メモアプリ等に控えておく）</li>
+        </ol>
+      </details>
+      <div class="row">
+        <input type="password" id="syncToken" placeholder="ghp_ で始まるトークン" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="btn" id="syncSave">保存して同期ON</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="syncNow">今すぐ同期</button>
+        <button class="btn" id="syncOff">この端末の同期をOFF</button>
+      </div>
+      <p class="hint" id="syncState"></p>
+      <p id="syncMsg" style="font-size:13px;margin:4px 0 0"></p>
+      <p class="hint">トークンはこの端末のブラウザにだけ保存され、GitHub以外には送られません。パスワードと同じく人に見せないでください。</p>
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+      <h3 style="margin-top:0">定数表データを読み込み（グリッドが空のとき）</h3>
+      <p>ジャケット一覧が出ない／「該当する譜面がありません」になる場合は、定数表データの自動取得が CORS でブロックされています。<a href="https://reiwa.f5.si/chunithm_record.json" target="_blank" rel="noopener">chunithm_record.json</a> を開いて保存し、下で読み込んでください（一度読めば次回から自動）。</p>
+      <input type="file" id="dataFile" accept=".json,application/json" style="color:var(--text);font-size:13px">
+      <span id="dataMsg" style="margin-left:8px"></span>
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+      <p>sdvx.in の曲一覧は JavaScript で動的生成され、ID（例: <code>07084</code>）は曲名から計算できません。そのため、<b>sdvx.in のページ上で下のスクリプトを一度だけ実行</b>して曲名↔IDの対応表を取り出します（一度設定すれば保存されます）。</p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+      <h3 style="margin-top:0">スコアを読み込み</h3>
+      <p>自己ベスト（スコア・ランク・FC/AJ/AJC）をタイルに表示します。取得元は2通りあります。<b>おすすめは①の公式</b>で、新曲もプレイ直後から反映されます。</p>
+
+      <h3>① CHUNITHM-NET（公式）から取得（おすすめ）</h3>
+      <ol>
+        <li>下の「🎮」ボタンを<b>ブックマークバーにドラッグ</b>して登録</li>
+        <li><a href="https://new.chunithm-net.com/" target="_blank" rel="noopener">CHUNITHM-NET</a> にログインし、ホーム画面を開く</li>
+        <li>登録したブックマークをクリック → 右上に進捗が出て、5難易度ぶん取得すると <b>chunithm-scores.json</b> が自動ダウンロード</li>
+        <li>下の「スコアJSONを読み込み」で選択</li>
+      </ol>
+      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!/chunithm-net%5C.com$/.test(location.hostname))%7Balert(%22CHUNITHM-NET%EF%BC%88new.chunithm-net.com%EF%BC%89%E3%81%AB%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3%E3%81%97%E3%81%9F%E7%8A%B6%E6%85%8B%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20B=%22https://new.chunithm-net.com/chuni-mobile/html/mobile/record/musicGenre%22;%20let%20box=document.getElementById(%22__netbox%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__netbox%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.6%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:340px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20const%20RANKS=%5B%5B1009000,%22SSS+%22%5D,%5B1007500,%22SSS%22%5D,%5B1005000,%22SS+%22%5D,%5B1000000,%22SS%22%5D,%5B990000,%22S+%22%5D,%5B975000,%22S%22%5D,%5B950000,%22AAA%22%5D,%5B925000,%22AA%22%5D,%5B900000,%22A%22%5D,%5B800000,%22BBB%22%5D,%5B700000,%22BB%22%5D,%5B600000,%22B%22%5D,%5B500000,%22C%22%5D,%5B0,%22D%22%5D%5D;%20const%20rankOf=s=%3E%7Bfor(const%20%5Bt,r%5D%20of%20RANKS)%7Bif(s%3E=t)return%20r;%7Dreturn%20%22D%22;%7D;%20const%20CLR=%7Bclear:%22CLR%22,hard:%22HRD%22,brave:%22BRV%22,absolute:%22ABS%22,catastrophy:%22CAT%22,catastrophe:%22CAT%22%7D;%20const%20unknownImg=%7B%7D;%20const%20parse=(html,diff,out)=%3E%7B%20const%20doc=new%20DOMParser().parseFromString(html,%22text/html%22);%20let%20n=0;%20doc.querySelectorAll(%22.musiclist_box%22).forEach(b=%3E%7B%20const%20idxEl=b.querySelector('input%5Bname=%22idx%22%5D');%20if(!idxEl)return;%20const%20m=(b.textContent%7C%7C%22%22).match(/HIGH%5Cs*SCORE%5B%5E%5Cd%5D*(%5B%5Cd,%5D+)/i);%20if(!m)return;%20const%20score=+m%5B1%5D.replace(/,/g,%22%22);%20if(!(score%3E0))return;%20const%20titleEl=b.querySelector(%22.music_title%22);%20let%20aj=%22%22,clr=%22%22;%20b.querySelectorAll(%22img%22).forEach(im=%3E%7B%20const%20f=((im.getAttribute(%22src%22)%7C%7C%22%22).split(%22/%22).pop()%7C%7C%22%22).toLowerCase().replace(/%5C.png.*$/,%22%22);%20if(/rank/.test(f))return;%20if(/alljusticecritical%7Cajc/.test(f))%7Baj=%22AJC%22;return;%7D%20if(/alljustice/.test(f))%7Bif(aj!==%22AJC%22)aj=%22AJ%22;return;%7D%20if(/fullcombo/.test(f))%7Bif(!aj)aj=%22FC%22;return;%7D%20const%20k=f.replace(/%5Eicon_/,%22%22);%20if(CLR%5Bk%5D)%7Bclr=CLR%5Bk%5D;return;%7D%20unknownImg%5Bf%5D=(unknownImg%5Bf%5D%7C%7C0)+1;%20%7D);%20if(aj===%22AJ%22%26%26score%3E=1010000)aj=%22AJC%22;%20const%20idx=idxEl.value;%20out%5B%22i:%22+idx+%22_%22+diff%5D=%7Bidx,title:titleEl?titleEl.textContent.trim():%22%22,diff,score,rank:rankOf(score),clr,aj,src:%22net%22%7D;%20n++;%20%7D);%20return%20n;%20%7D;%20try%7B%20say(%22%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20const%20g=await%20(await%20fetch(B,%7Bcredentials:%22include%22%7D)).text();%20const%20ti=g.indexOf(%22token%22);%20const%20token=ti%3E=0?(g.slice(ti,ti+200).match(/%5B0-9a-f%5D%7B32%7D/)%7C%7C%5B%5D)%5B0%5D:null;%20if(!token)%7Bsay(%22%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%82%92%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3ECHUNITHM-NET%E3%81%AE%E3%83%9B%E3%83%BC%E3%83%A0%E3%82%92%E9%96%8B%E3%81%8D%E7%9B%B4%E3%81%97%E3%81%A6%E3%81%8B%E3%82%89%E5%86%8D%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20DIFFS=%5B%5B%22Basic%22,%22BAS%22%5D,%5B%22Advanced%22,%22ADV%22%5D,%5B%22Expert%22,%22EXP%22%5D,%5B%22Master%22,%22MAS%22%5D,%5B%22Ultima%22,%22ULT%22%5D%5D;%20const%20out=%7B%7D;const%20cnt=%7B%7D;%20for(const%20%5Bname,key%5D%20of%20DIFFS)%7B%20say(%22%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+key+%22%EF%BC%88%22+(DIFFS.findIndex(d=%3Ed%5B1%5D===key)+1)+%22%20/%205%EF%BC%89%22);%20const%20r=await%20fetch(B+%22/send%22+name,%7Bmethod:%22POST%22,credentials:%22include%22,headers:%7B%22Content-Type%22:%22application/x-www-form-urlencoded%22%7D,body:%22genre=99%26token=%22+token%7D);%20const%20html=await%20r.text();%20cnt%5Bkey%5D=parse(html,key,out);%20await%20new%20Promise(res=%3EsetTimeout(res,400));%20%7D%20const%20total=Object.keys(out).length;%20if(!total)%7Bsay(%22%E3%82%B9%E3%82%B3%E3%82%A2%E3%82%921%E4%BB%B6%E3%82%82%E8%AA%AD%E3%81%BF%E5%8F%96%E3%82%8C%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%AD%E3%82%B0%E3%82%A4%E3%83%B3%E7%8A%B6%E6%85%8B%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%97%E3%81%A6%E3%81%8B%E3%82%89%E5%86%8D%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20v=Object.values(out);%20const%20ajc=v.filter(x=%3Ex.aj===%22AJC%22).length,%20aj=v.filter(x=%3Ex.aj===%22AJ%22).length,%20fc=v.filter(x=%3Ex.aj===%22FC%22).length;%20const%20json=JSON.stringify(out);%20const%20a=document.createElement(%22a%22);try%7Ba.href=window.URL.createObjectURL(new%20Blob(%5Bjson%5D,%7Btype:%22application/json%22%7D));%7Dcatch(e)%7Ba.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(json);%7Da.download=%22chunithm-scores.json%22;document.body.appendChild(a);a.click();a.remove();%20const%20unk=Object.keys(unknownImg);%20say(%22%E2%9C%85%20%E6%9B%B8%E3%81%8D%E5%87%BA%E3%81%97%E5%AE%8C%E4%BA%86%EF%BC%9A%22+total+%22%20%E8%AD%9C%E9%9D%A2%3Cbr%3E%22+DIFFS.map(d=%3Ed%5B1%5D+%22%20%22+(cnt%5Bd%5B1%5D%5D%7C%7C0)).join(%22%20/%20%22)+%22%3Cbr%3EAJC%20%22+ajc+%22%20/%20AJ%20%22+aj+%22%20/%20FC%20%22+fc+%22%3Cbr%3Echunithm-scores.json%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%80%8C%E3%82%B9%E3%82%B3%E3%82%A2%E3%82%92%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%80%8D%E3%81%A7%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22+(unk.length?%22%3Cbr%3E%3Csmall%3E%E6%9C%AA%E5%88%A4%E5%AE%9A%E3%82%A2%E3%82%A4%E3%82%B3%E3%83%B3:%20%22+unk.join(%22,%20%22)+%22%3C/small%3E%22:%22%22));%20setTimeout(()=%3Ebox.remove(),30000);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">🎮 CHUNITHM-NETからスコアを書き出し</a> ← ブックマークバーへドラッグ</p>
+      <p class="hint">※ chunirecのスコア更新と同じく、各難易度の記録ページを1回ずつ（計5回）読み込むだけです。</p>
+
+      <h3>② chunirec から取得</h3>
+      <ol>
+        <li>下の「🏆」ボタンをブックマークバーに登録</li>
+        <li><a href="https://chunirec.net/" target="_blank" rel="noopener">chunirec</a> にログインし、自分のスコア一覧ページ（詳細表示）を開く</li>
+        <li>登録したブックマークをクリック → <b>chunithm-scores.json</b> が自動ダウンロード</li>
+      </ol>
+      <p><a class="bmlet" href="javascript:(()=%3E%7B%20if(!location.hostname.endsWith(%22chunirec.net%22))%7Balert(%22chunirec.net%20%E3%81%AE%E3%82%B9%E3%82%B3%E3%82%A2%E4%B8%80%E8%A6%A7%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=t=%3E(t%7C%7C%22%22).trim().replace(/%5Cs+/g,%22%20%22);%20const%20tables=%5B...document.querySelectorAll(%22table%22)%5D;%20const%20table=tables.find(t=%3E%7Bconst%20h=t.querySelector(%22tr%22);return%20h&amp;&amp;/AJ%5Cs*FC/.test(h.innerText)&amp;&amp;/CLR/.test(h.innerText);%7D);%20if(!table)%7Balert(%22FC/AJ%E5%88%97%E3%82%92%E5%90%AB%E3%82%80%E8%A9%B3%E7%B4%B0%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB%E3%81%8C%E8%A6%8B%E3%81%A4%E3%81%8B%E3%82%8A%E3%81%BE%E3%81%9B%E3%82%93%E3%80%82%E8%A1%A8%E7%A4%BA%E9%A0%85%E7%9B%AE%E3%82%92%E3%80%8E%E8%A9%B3%E7%B4%B0%E3%80%8F%E3%81%AB%E3%81%97%E3%81%A6%E5%86%8D%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20heads=%5B...table.querySelector(%22tr%22).children%5D.map(h=%3Enorm(h.innerText));%20const%20col=name=%3Eheads.findIndex(h=%3Eh===name);%20const%20iDiff=col(%22%E9%9B%A3%E6%98%93%E5%BA%A6%22),%20iScore=col(%22%E3%82%B9%E3%82%B3%E3%82%A2%22),%20iRank=col(%22%E3%83%A9%E3%83%B3%E3%82%AF%22),%20iCLR=col(%22CLR%22),%20iAJ=col(%22AJ%20FC%22);%20const%20out=%7B%7D;let%20rows=0,ok=0;%20for(const%20tr%20of%20table.querySelectorAll(%22tr%22))%7B%20const%20tds=%5B...tr.children%5D;%20if(!tds.length%7C%7Ctds%5B0%5D.tagName!==%22TD%22)continue;%20rows++;%20const%20a=tr.querySelector('a%5Bhref*=%22db.chunirec.net/music/%22%5D');%20const%20idm=a?a.getAttribute(%22href%22).match(/music%5C/(%5B0-9a-f%5D+)/i):null;%20if(!idm)continue;%20const%20id=idm%5B1%5D;%20const%20cell=i=%3Ei%3E=0&amp;&amp;tds%5Bi%5D?norm(tds%5Bi%5D.innerText):%22%22;%20const%20diff=cell(iDiff).toUpperCase();%20if(!/%5E(ULT%7CMAS%7CEXP%7CADV%7CBAS%7CWE)$/.test(diff))continue;%20const%20scoreN=+cell(iScore).replace(/,/g,%22%22).replace(/%5C(.*$/,%22%22);%20if(!(scoreN%3E=1&amp;&amp;scoreN%3C=1010000))continue;%20let%20rank=cell(iRank).replace(/%5Cs/g,%22%22);%20let%20clr=cell(iCLR).toUpperCase();%20let%20aj=cell(iAJ).toUpperCase().replace(/%5Cs/g,%22%22);%20if(clr===%22NONE%22%7C%7Cclr===%22%22)clr=%22%22;%20if(aj===%22NONE%22%7C%7Caj===%22%22)aj=%22%22;%20out%5Bid+%22_%22+diff%5D=%7Bid,diff,score:scoreN,rank,clr,aj%7D;%20ok++;%20%7D%20const%20json=JSON.stringify(out);%20const%20a=document.createElement(%22a%22);a.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(json);a.download=%22chunithm-scores.json%22;document.body.appendChild(a);a.click();a.remove();%20let%20box=document.createElement(%22div%22);box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:340px%22;%20const%20ajc=Object.values(out).filter(x=%3Ex.aj===%22AJC%22).length,%20aj=Object.values(out).filter(x=%3Ex.aj===%22AJ%22).length,%20fc=Object.values(out).filter(x=%3Ex.aj===%22FC%22).length;%20box.innerHTML=%22%E2%9C%85%20%E3%82%B9%E3%82%B3%E3%82%A2%E6%9B%B8%E3%81%8D%E5%87%BA%E3%81%97%E5%AE%8C%E4%BA%86%3Cbr%3E%22+ok+%22%20%E8%AD%9C%E9%9D%A2%EF%BC%88AJC%20%22+ajc+%22%20/%20AJ%20%22+aj+%22%20/%20FC%20%22+fc+%22%EF%BC%89%3Cbr%3Echunithm-scores.json%20%E3%82%92DL%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%80%8C%E3%82%B9%E3%82%B3%E3%82%A2%E3%82%92%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%80%8D%E3%81%A7%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22;%20document.body.appendChild(box);setTimeout(()=%3Ebox.remove(),20000);%20%7D)();">🏆 chunirecスコアを書き出し</a> ← ブックマークバーへドラッグ</p>
+      <h3>スコアJSONを読み込み</h3>
+      <p class="hint">①・②どちらで作ったファイルも、ここで読み込めます（読み込むと前のスコアは置き換わります）。</p>
+      <input type="file" id="scoreFile" accept=".json,application/json" style="color:var(--text);font-size:13px">
+      <span id="scoreMsg" style="margin-left:8px"></span>
+      <div class="row" style="margin-top:8px"><button class="btn" id="scoreClear">スコアを消去</button></div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+      <h3 style="margin-top:0">対応表の更新（2通り）</h3>
+      <p>ゲームのアップデートで曲が増えたら、対応表を作り直します。<b>方法①ブックマークレット（ワンクリック・おすすめ）</b>か、<b>方法②コンソールにスクリプトを貼る（従来）</b>のどちらでもOKです。</p>
+
+      <h3>方法①：ブックマークレット（ワンクリック更新）</h3>
+      <ol>
+        <li>下のボタンを<b>ブックマークバーにドラッグ＆ドロップ</b>して登録（スマホは長押し→ブックマーク追加）</li>
+        <li><a href="https://sdvx.in/chunithm.html" target="_blank" rel="noopener">sdvx.in の譜面保管所</a>を開く</li>
+        <li>下の2つのボタンを<b>それぞれ</b>ブックマークバーにドラッグして登録</li>
+        <li><b>初回は「全件取得」</b>、<b>アップデートで曲が増えたら「差分更新」</b>を使う</li>
+        <li>登録したブックマークをクリック → 右上に進捗、完了でJSONが自動ダウンロード</li>
+        <li>このツールの「方法A」で読み込む（差分更新ぶんは<b>既存に追記</b>されます）</li>
+      </ol>
+      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22%E3%81%93%E3%81%AE%E3%83%96%E3%83%83%E3%82%AF%E3%83%9E%E3%83%BC%E3%82%AF%E3%83%AC%E3%83%83%E3%83%88%E3%81%AF%20sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20get=async%20u=%3E%7Bconst%20r=await%20fetch(u,%7Bcache:%22no-store%22%7D);if(!r.ok)throw%200;const%20b=await%20r.arrayBuffer();let%20t=new%20TextDecoder(%22utf-8%22).decode(b);if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);return%20t;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:320px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20songs=new%20Map();%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Bsongs.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20const%20entries=%5B...songs.entries()%5D;%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id,k=norm(title);if(!map%5Bk%5D)map%5Bk%5D=%7Bt:title%7D;map%5Bk%5D.EXP=s+%22exp%22;map%5Bk%5D.MAS=s+%22mst%22;%7D%7Dcatch(e)%7Bfail++;%7Ddone++;%7D;%20const%20CONC=8;%20for(let%20i=0;i%3Centries.length;i+=CONC)%7Bawait%20Promise.all(entries.slice(i,i+CONC).map(p=%3Ework(p%5B0%5D,p%5B1%5D)));say(%22%E6%AD%A3%E5%BC%8F%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+entries.length);%7D%20const%20out=JSON.stringify(map);%20const%20a=document.createElement(%22a%22);a.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(out);a.download=%22chunithm-sdvx-map.json%22;document.body.appendChild(a);a.click();a.remove();%20say(%22%E2%9C%85%20%E5%AE%8C%E4%BA%86%EF%BC%9A%22+Object.keys(map).length+%22%E6%9B%B2%3Cbr%3Echunithm-sdvx-map.json%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%80%8C%E6%96%B9%E6%B3%95A%E3%80%8D%E3%81%A7%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22+(fail?%22%3Cbr%3E%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22));%20setTimeout(()=%3E%7Bbox.remove();%7D,15000);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">⚡ 全件取得（初回・作り直し）</a> ← ブックマークバーへドラッグ</p>
+      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20get=async%20u=%3E%7Bconst%20r=await%20fetch(u,%7Bcache:%22no-store%22%7D);if(!r.ok)throw%200;const%20b=await%20r.arrayBuffer();let%20t=new%20TextDecoder(%22utf-8%22).decode(b);if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);return%20t;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:340px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%EF%BC%88%E5%B7%AE%E5%88%86%E6%9B%B4%E6%96%B0%EF%BC%89%22);%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20all=new%20Map();%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Ball.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20if(!all.size)%7Bsay(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%22);return;%7D%20let%20maxV=0;for(const%20f%20of%20all.values())%7Bconst%20v=parseInt(f,10);if(v%3EmaxV)maxV=v;%7D%20const%20lo=maxV-1;%20const%20targets=%5B...all.entries()%5D.filter((%5Bid,f%5D)=%3EparseInt(f,10)%3E=lo);%20say(%22%E6%9C%80%E6%96%B02%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3(v%22+lo+%22%E3%80%9Cv%22+maxV+%22)%E3%81%AE%20%22+targets.length+%22%20%E6%9B%B2%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id,k=norm(title);if(!map%5Bk%5D)map%5Bk%5D=%7Bt:title%7D;map%5Bk%5D.EXP=s+%22exp%22;map%5Bk%5D.MAS=s+%22mst%22;%7D%7Dcatch(e)%7Bfail++;%7Ddone++;%7D;%20const%20CONC=8;%20for(let%20i=0;i%3Ctargets.length;i+=CONC)%7Bawait%20Promise.all(targets.slice(i,i+CONC).map(p=%3Ework(p%5B0%5D,p%5B1%5D)));say(%22%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+targets.length);%7D%20const%20out=JSON.stringify(map);%20const%20a=document.createElement(%22a%22);a.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(out);a.download=%22chunithm-sdvx-map-diff.json%22;document.body.appendChild(a);a.click();a.remove();%20say(%22%E2%9C%85%20%E5%B7%AE%E5%88%86%E5%8F%96%E5%BE%97%20%E5%AE%8C%E4%BA%86%3Cbr%3E%E6%9C%80%E6%96%B02%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3%20%22+Object.keys(map).length+%22%20%E6%9B%B2%3Cbr%3Echunithm-sdvx-map-diff.json%20%E3%82%92DL%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%80%8C%E6%96%B9%E6%B3%95A%E3%80%8D%E3%81%A7%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%80%EF%BC%88%E6%97%A2%E5%AD%98%E3%81%AB%E8%BF%BD%E8%A8%98%E3%81%95%E3%82%8C%E3%81%BE%E3%81%99%EF%BC%89%E3%80%82%22+(fail?%22%3Cbr%3E%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22));%20setTimeout(()=%3Ebox.remove(),20000);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">🔄 差分更新（最新2バージョンだけ・速い）</a> ← ブックマークバーへドラッグ</p>
+      <p class="hint">※ ボタンは<b>クリックではなくドラッグ</b>でブックマーク登録 → sdvx.in 上で使います。<br>「差分更新」は最新2バージョンだけ取得するので速いです（古い曲は変化しないため）。読み込みは既存に追記されるので、古い曲が消えることはありません。全部作り直したいときだけ「全件取得」を使ってください。</p>
+
+      <h3>方法②：コンソールにスクリプトを貼る（従来）</h3>
+
+      <h3>手順</h3>
+      <ol>
+        <li><a href="https://sdvx.in/chunithm.html" target="_blank" rel="noopener">https://sdvx.in/chunithm.html</a> を新しいタブで開く</li>
+        <li>ページが完全に表示されたら、<b>F12 →「コンソール」</b>タブを開く（PC推奨）</li>
+        <li>下のスクリプトを「コピー」してコンソールに貼り付け、Enter で実行</li>
+        <li><b>chunithm-sdvx-map.json</b> が自動ダウンロードされます</li>
+        <li>下の「方法A」でそのファイルを読み込む（コピペより確実です）</li>
+      </ol>
+
+      <div class="codewrap">
+        <button class="btn copy" id="copyCode">コピー</button>
+<pre class="code" id="snip">(async()=&gt;{
+  const norm=s=&gt;(s||"").normalize("NFKC").replace(/\s+/g,"").toLowerCase();
+  const tmp=document.createElement("div");
+  const clean=h=&gt;{tmp.innerHTML=h;return (tmp.textContent||"").replace(/[\u0000-\u001f]/g," ").trim();};
+  const get=async u=&gt;{const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw 0;const b=await r.arrayBuffer();let t=new TextDecoder("utf-8").decode(b);if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);return t;};
+  const genres=["pops","niconico","toho","variety","irodorimidori","gekimai","original"];
+  const idRe=/\/chunithm\/(\d{2})\/js\/(\d+)sort\.js/g;
+  const songs=new Map();
+  for(const g of genres){
+    try{const html=await get("https://sdvx.in/chunithm/sort/"+g+".htm");let m;idRe.lastIndex=0;
+      while((m=idRe.exec(html))){songs.set(m[2],m[1]);}
+    }catch(e){console.log(g,"取得失敗");}
+  }
+  console.log("対象曲数:",songs.size,"→ 各sort.jsから正式名称を取得中（30秒〜1分ほど）…");
+  const entries=[...songs.entries()];
+  const map={};let done=0,fail=0;
+  const titleRe=/var TITLE\d+="(.*?)";/;
+  const work=async(id,folder)=&gt;{
+    try{
+      const js=await get("https://sdvx.in/chunithm/"+folder+"/js/"+id+"sort.js");
+      const m=js.match(titleRe);
+      const title=m?clean(m[1]):"";
+      if(title){const s=folder+"/"+id,k=norm(title);if(!map[k])map[k]={t:title};map[k].EXP=s+"exp";map[k].MAS=s+"mst";}
+    }catch(e){fail++;}
+    done++;
+  };
+  const CONC=8;
+  for(let i=0;i&lt;entries.length;i+=CONC){
+    await Promise.all(entries.slice(i,i+CONC).map(p=&gt;work(p[0],p[1])));
+    if(i%(CONC*25)===0)console.log("進捗",done,"/",entries.length);
+  }
+  console.log("完了 曲数:",Object.keys(map).length," 取得失敗:",fail);
+  const chk=["宵の平安京","ouroboros","ビッグブリッヂ","めっちゃ煽って"];
+  for(const q of chk){const hit=Object.values(map).find(v=&gt;v.t&amp;&amp;v.t.startsWith(q));console.log("確認:",q,"→",hit?hit.t:"見つからず");}
+  const out=JSON.stringify(map);
+  const a=document.createElement("a");a.href="data:application/json;charset=utf-8,"+encodeURIComponent(out);a.download="chunithm-sdvx-map.json";document.body.appendChild(a);a.click();a.remove();
+  console.log("%c✅ chunithm-sdvx-map.json をダウンロードしました。ツールの「方法A」で読み込んでください。","color:#34e7e4;font-weight:bold");
+  return out;
+})();</pre>
+      </div>
+      <p class="hint">※ うまく動かない場合は、コンソールに出る「各ジャンル抽出数」と「曲数」を教えてください。</p>
+
+      <h3>方法A：JSONファイルを読み込み（推奨・確実）</h3>
+      <input type="file" id="fileInput" accept=".json,application/json" style="color:var(--text);font-size:13px">
+      <p class="hint">スクリプト実行時にダウンロードされた <b>chunithm-sdvx-map.json</b> を選んでください。読み込むと自動で保存・反映されます。</p>
+
+      <h3>方法B：テキストを貼り付け</h3>
+      <textarea class="paste" id="paste" placeholder='ここに JSON（{"melodiniq":{...}, ...}）を貼り付け'></textarea>
+      <div class="row">
+        <button class="btn" id="saveMap">保存して反映</button>
+        <button class="btn" id="clearMap">対応表を消去</button>
+        <span id="saveMsg"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SDVX_BASE = "https://sdvx.in/chunithm/";
+const JACKET_BASE = "https://reiwa.f5.si/jackets/chunithm/";
+const DATA_URL = "https://reiwa.f5.si/chunithm_record.json";
+const LS_KEY = "sdvx_chunithm_map_v1";
+const DIFF_ORDER = ["ULT","MAS","EXP"];     // 表示・優先順
+const SHOW_DIFFS = new Set(["EXP","MAS","ULT"]);
+
+const norm = s => (s||"")
+  .normalize("NFKD")                              // é→e+´ などに分解
+  .replace(/[\u0300-\u036f]/g,"")                 // 分解した発音記号を除去
+  .normalize("NFKC")                              // 全角→半角など
+  .toLowerCase()
+  .replace(/[øØ]/g,"o").replace(/[åÅ]/g,"a").replace(/[æÆ]/g,"ae")
+  .replace(/[∅⊘]/g,"o")                           // 空集合記号など→o
+  .replace(/[♡♥❤☆★※\u2010-\u2015~〜～\-_.,!?'"`´’“”（）()\[\]{}：:;・/\\|＋+&＆☆]/g,"")
+  .replace(/\s+/g,"")
+  .replace(/[^\p{Letter}\p{Number}]/gu,"");       // 残った記号類をすべて除去
+
+let songs = [];          // {title, img, const, diff}
+let sdvxMap = {};        // normTitle -> {t, EXP,MAS,ULT,...}
+let scores = {};         // "chunirec_id_DIFF" -> {score, rank}
+const LS_SCORE = "chuni_scores_v1";
+let activeDiffs = new Set(["MAS","ULT"]);
+/* 絞り込み状態 */
+let filterCmin = null, filterCmax = null;   // 定数の最小・最大
+let activeGenres = null;                     // null=全ジャンル / Set=選択中
+let activeVersions = null;                   // null=全バージョン / Set=選択中
+let scoreMode = "off";                        // rank=ランク特大 / score=スコア / off=非表示
+let filterLamps = null;                       // null=全ランプ / Set=選択中(AJC/AJ/FC/none)
+let filterRanks = null;                       // null=全ランク区分 / Set=選択中(rk-*)
+let filterScoreMin = null, filterScoreMax = null;  // スコア数値範囲
+
+/* ---------- 手動の別名対応 ----------
+   normでは吸収できない「綴り違い・副題の有無」などをここで対応づける。
+   左：定数表(reiwa)での曲名／右：譜面保管所(sdvx.in)での曲名
+   追記する場合はこの形式で行を足すだけでOK。 */
+const ALIASES = {
+  "Help me, ERINNNNNN!! (Band Ver.)": "Help me, ERINNNNNN!!",
+  "Solstånd": "Solsånd",
+};
+const aliasMap = {};     // norm(定数表名) -> norm(sdvx名)
+function buildAliases(){ for(const k in ALIASES){ aliasMap[norm(k)] = norm(ALIASES[k]); } }
+buildAliases();
+
+/* ---------- storage (self-host で永続化, 失敗時はメモリのみ) ---------- */
+let sdvxRaw = {};   // 保存されている生データ（norm(snippet)キー）。マージの土台。
+function loadMap(){
+  try{const v=localStorage.getItem(LS_KEY);if(v){ sdvxRaw=JSON.parse(v)||{}; return rekeyMap(sdvxRaw);} }catch(e){}
+  sdvxRaw={};
+  return {};
+}
+// 対応表のキーを現行のnorm()で貼り直す（スニペット側の正規化差を吸収）
+function rekeyMap(obj){
+  if(!obj||typeof obj!=="object")return {};
+  const out={};
+  for(const k in obj){
+    const e=obj[k];
+    const t=(e&&e.t)?e.t:k;       // 元の曲名があればそれを再正規化
+    out[norm(t)]=e;
+  }
+  return out;
+}
+function persistMap(obj){
+  try{localStorage.setItem(LS_KEY, JSON.stringify(obj));return true;}catch(e){return false;}
+}
+// 新しい対応表(obj)を既存にマージして反映（差分更新・全件どちらも対応）
+// 返り値: {total, added}
+function mergeSdvx(obj){
+  const before=Object.keys(sdvxRaw).length;
+  sdvxRaw=Object.assign({}, sdvxRaw, obj);   // 同キーは新しい方で上書き、新規は追加
+  const ok=persistMap(sdvxRaw);
+  sdvxMap=rekeyMap(sdvxRaw);
+  sortSongs();   // 譜面IDが変わると実装順の並びも変わる
+  return {total:Object.keys(sdvxRaw).length, added:Object.keys(sdvxRaw).length-before, persisted:ok};
+}
+
+/* ---------- スコア（CHUNITHM-NET / chunirec 由来） ---------- */
+let scoreByTitle = {};   // norm(曲名)+"_"+難易度 -> スコア（idxで合わない曲の保険）
+function buildScoreIndex(){
+  scoreByTitle={};
+  for(const k in scores){ const e=scores[k]; if(e && e.title) scoreByTitle[norm(e.title)+"_"+e.diff]=e; }
+}
+function loadScores(){
+  try{const v=localStorage.getItem(LS_SCORE);if(v)scores=JSON.parse(v)||{};}catch(e){scores={};}
+  buildScoreIndex();
+}
+function saveScores(obj){
+  scores=obj||{};
+  buildScoreIndex();
+  try{localStorage.setItem(LS_SCORE, JSON.stringify(scores));return true;}catch(e){return false;}
+}
+function scoreOf(song){
+  // 1) 公式の楽曲idx  2) chunirec_id  3) 曲名 の順で自己ベストを引く
+  return scores["i:"+String(song.idx)+"_"+song.diff]
+      || scores[String(song.chunirec_id)+"_"+song.diff]
+      || scoreByTitle[norm(song.title)+"_"+song.diff]
+      || null;
+}
+// ランク文字列 → 4区分の色クラス
+function rankClass(rank){
+  const r=(rank||"").toUpperCase().replace(/\s/g,"");
+  if(r==="SSS+") return "rk-sssp";
+  if(r==="SSS")  return "rk-sss";
+  if(r==="SS+"||r==="SS"||r==="S+"||r==="S") return "rk-ss";
+  return "rk-low";   // AAA以下（S未満）
+}
+
+/* ---------- constant table data ---------- */
+const LS_DATA = "chuni_const_data_v1";
+
+let baseSongs = [];      // 定数表データ（表示難易度のみ・データの並び順のまま）
+function applyConstData(data, persist){
+  if(!Array.isArray(data)) throw new Error("配列ではありません");
+  baseSongs = data.filter(s => SHOW_DIFFS.has(s.diff));
+  sortSongs();
+  if(persist){ try{localStorage.setItem(LS_DATA, JSON.stringify(data));}catch(e){} }
+  render();
+}
+// sdvx.in の譜面ID（例 "10/10263mst" → 10263）。sdvx.in は実装順に譜面を追加するので、実装順の目安になる
+function sdvxOrder(s){
+  const st = sdvxStem(s.title,"MAS") || sdvxStem(s.title,"EXP");
+  const m = st && String(st).match(/(\d+)(?:mst|exp)$/);
+  return m ? +m[1] : Infinity;   // 対応表に無い曲（sdvx.in未掲載の新曲など）は後ろへ
+}
+// 並び順: 定数の高い順 → 同定数は配信日（バージョン）の古い順
+//   → 同じなら sdvx.in の譜面ID順（≒実装順）→ 対応表に無い曲は公式idx順 → データ順
+function sortSongs(){
+  const idxNum = s => { const n = parseInt(s.idx, 10); return isNaN(n) ? Infinity : n; };
+  const key = new Map(baseSongs.map(s=>[s, sdvxOrder(s)]));
+  songs = baseSongs.map((s,i)=>({s,i,o:key.get(s)}))
+    .sort((a,b)=> (b.s.const-a.s.const) || (a.s.release-b.s.release)
+                  || ((a.o===b.o)?0:(a.o<b.o?-1:1))
+                  || (idxNum(a.s)-idxNum(b.s)) || (a.i-b.i))
+    .map(x=>x.s);
+}
+
+function showDataError(extra){
+  document.getElementById("main").innerHTML =
+    '<div class="center"><div style="font-size:34px">⚠</div>'+
+    '<div style="max-width:560px">定数表データを自動取得できませんでした'+(extra?'（'+extra+'）':'')+'。<br>'+
+    'これは <b>reiwa.f5.si が別ドメインからの取得を許可していない（CORS）</b>ためで、よくある現象です。<br><br>'+
+    '<b>対処：</b>右上「⚙ 設定」→「定数表データを読み込み」から、'+
+    '<a href="https://reiwa.f5.si/chunithm_record.json" target="_blank" rel="noopener">chunithm_record.json</a>'+
+    ' を保存して読み込んでください（一度読めば次回からは自動です）。</div></div>';
+}
+
+async function init(){
+  sdvxMap = loadMap();
+  loadScores();
+  // 1) まずキャッシュがあれば即表示
+  let hadCache=false;
+  try{
+    const c=localStorage.getItem(LS_DATA);
+    if(c){ applyConstData(JSON.parse(c), false); hadCache=true; }
+  }catch(e){}
+  // 2) 最新を取りに行く（成功すれば更新＆キャッシュ）
+  try{
+    const res = await fetch(DATA_URL, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    let txt = await res.text();
+    if(txt.charCodeAt(0)===0xFEFF) txt = txt.slice(1); // BOM
+    applyConstData(JSON.parse(txt), true);
+    const sm=syncMeta(); sm.constFetchedAt=Date.now(); setSyncMeta(sm);
+  }catch(err){
+    if(!hadCache && !syncToken()) showDataError(String(err));
+  }
+  refreshSyncStatus();
+  syncPull({silent:true, onEmpty: !songs.length ? ()=>showDataError("クラウドにも定数表データがありません") : null});
+}
+
+/* ---------- build sdvx url ---------- */
+function sdvxStem(title, diff){
+  const nq = norm(title);
+  let e = sdvxMap[nq];
+  if(!e && aliasMap[nq]) e = sdvxMap[aliasMap[nq]];   // 手動別名でフォールバック
+  if(!e) return null;
+  if(diff==="ULT"){
+    // ULTは「ult/<id>ult」。IDはMAS/EXPと共通なのでそこから生成する。
+    const base = e.MAS || e.EXP || e.ULT;
+    if(!base) return null;
+    const m = String(base).match(/(\d+)(?:mst|exp|ult)/) || String(base).match(/(\d+)/);
+    if(!m) return null;
+    return "ult/" + m[1] + "ult";       // 例: ult/10263ult
+  }
+  return e[diff] || null;               // "10/10263mst"
+}
+function sdvxUrl(stem){
+  return SDVX_BASE + stem + ".htm";
+}
+
+/* ---------- render ---------- */
+function render(){
+  const q = norm(document.getElementById("q").value);
+  const main = document.getElementById("main");
+  const hasMap = Object.keys(sdvxMap).length>0;
+
+  // group by const
+  const groups = new Map();
+  let shown=0, matched=0;
+  for(const s of songs){
+    if(!activeDiffs.has(s.diff)) continue;
+    if(q && !(norm(s.title).includes(q) || norm(s.artist||"").includes(q))) continue;
+    if(filterCmin!=null && s.const < filterCmin) continue;
+    if(filterCmax!=null && s.const > filterCmax) continue;
+    if(activeGenres && !activeGenres.has(s.genre)) continue;
+    if(activeVersions && !activeVersions.has(s.version==null?"":s.version)) continue;
+    // スコア絞り込み（ランク区分・数値範囲）
+    if(filterLamps || filterRanks || filterScoreMin!=null || filterScoreMax!=null){
+      const sc=scoreOf(s);
+      if(filterLamps){
+        const lp = (sc && sc.aj) ? sc.aj : "none";
+        if(!filterLamps.has(lp)) continue;
+      }
+      if(filterRanks){
+        const rk = sc ? rankClass(sc.rank) : "none";
+        if(!filterRanks.has(rk)) continue;
+      }
+      if(filterScoreMin!=null || filterScoreMax!=null){
+        if(!sc) continue;   // 範囲指定時はスコア無しを除外
+        if(filterScoreMin!=null && sc.score < filterScoreMin) continue;
+        if(filterScoreMax!=null && sc.score > filterScoreMax) continue;
+      }
+    }
+    const key = s.const.toFixed(1);
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(s);
+    shown++;
+    if(hasMap && sdvxStem(s.title,s.diff)) matched++;
+  }
+
+  // status
+  const total = songs.filter(s=>activeDiffs.has(s.diff)).length;
+  const st = document.getElementById("status");
+  if(!hasMap){
+    st.innerHTML = '<span class="nomap">⚠ sdvx対応表が未設定です。クリックすると保管所トップが開きます。右上の「⚙ 設定」から設定してください。</span>';
+  }else{
+    st.innerHTML = '<span>表示中 <b>'+shown+'</b> 譜面</span>'+
+      '<span>sdvxマッチ <b>'+matched+'</b> / '+shown+'</span>'+
+      (filterActive()? '<span style="color:var(--cyan)">● 絞り込み中</span>':'')+
+      '<span style="color:#6b73a0">（未マッチはsdvxトップへフォールバック）</span>';
+  }
+
+  if(shown===0){
+    main.innerHTML='<div class="center"><div>該当する譜面がありません</div></div>';
+    return;
+  }
+
+  const sortedKeys = [...groups.keys()].sort((a,b)=>parseFloat(b)-parseFloat(a));
+  let html="";
+  for(const k of sortedKeys){
+    html += '<section class="levblock"><div class="levhead"><span class="num">'+k+'</span><span class="rule"></span></div><div class="grid">';
+    for(const s of groups.get(k)){
+      const d = s.diff;                    // EXP/MAS/ULT
+      const cls = d.toLowerCase();
+      const stem = hasMap ? sdvxStem(s.title,d) : null;
+      const linked = !!stem;
+      const direct = JACKET_BASE + s.img + ".webp";
+      const cand = [
+        "https://images.weserv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
+        "https://wsrv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
+        direct
+      ];
+      const dataAttr = linked ? ('data-stem="'+stem+'"') : 'data-fallback="1"';
+      const sc = scoreOf(s);
+      const lamp = (sc && sc.aj && scoreMode!=="off") ? '<span class="lamp lamp-'+sc.aj.toLowerCase()+'">'+sc.aj+'</span>' : '';
+      // 表示モード: rank=ランク特大 / score=スコア数値 / off=なし
+      let overlay='', dimClass='';
+      if(sc && scoreMode==="rank" && sc.rank){
+        overlay='<span class="rankbig '+rankClass(sc.rank)+'">'+escapeHtml(sc.rank)+'</span>';
+        dimClass=' dim';
+      }else if(sc && scoreMode==="score"){
+        overlay='<span class="scorebig '+rankClass(sc.rank)+'">'+Number(sc.score).toLocaleString()+'</span>';
+        dimClass=' dim';
+      }
+      html += '<button class="tile '+cls+(hasMap && !linked?' nolink':'')+'" '+dataAttr+' title="'+escapeAttr(s.title)+' ['+d+']'+(sc?' '+(sc.rank||'')+' '+Number(sc.score).toLocaleString():'')+'">'
+        + '<div class="jacket'+dimClass+'" data-name="'+escapeAttr(s.title)+'">'
+          + '<img src="'+cand[0]+'" data-cand="'+escapeAttr(JSON.stringify(cand))+'" data-i="0" loading="lazy" referrerpolicy="no-referrer" '
+          + 'onerror="(function(im){var c=JSON.parse(im.dataset.cand);var i=(+im.dataset.i)+1;if(i&lt;c.length){im.dataset.i=i;im.src=c[i];}else{im.onerror=null;im.style.display=\'none\';im.parentNode.classList.add(\'noimg\');}})(this)" alt="">'
+          + '<span class="badge '+cls+'">'+d+'</span>'
+          + '<span class="cst">'+s.const.toFixed(1)+'</span>'
+          + lamp
+          + overlay
+          + (hasMap && !linked ? '<span class="nolinktag">sdvx未マッチ</span>' : '')
+        + '</div>'
+        + '<span class="ttl">'+escapeHtml(s.title)+'</span>'
+      + '</button>';
+    }
+    html += '</div></section>';
+  }
+  main.innerHTML = html;
+
+  // bind clicks
+  main.querySelectorAll(".tile").forEach(t=>{
+    t.addEventListener("click",()=>{
+      const stem = t.getAttribute("data-stem");
+      const url = stem ? sdvxUrl(stem) : "https://sdvx.in/chunithm.html";
+      window.open(url, "_blank", "noopener");
+    });
+  });
+}
+
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function escapeAttr(s){return s.replace(/["&<>]/g,c=>({'"':"&quot;","&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---------- controls ---------- */
+document.getElementById("q").addEventListener("input", debounce(render,150));
+document.getElementById("diffs").addEventListener("click",e=>{
+  const chip=e.target.closest(".chip"); if(!chip)return;
+  const d=chip.dataset.d;
+  if(activeDiffs.has(d)){activeDiffs.delete(d);chip.dataset.on="0";}
+  else{activeDiffs.add(d);chip.dataset.on="1";}
+  render();
+});
+document.getElementById("scoreModeBox").addEventListener("click",e=>{
+  const chip=e.target.closest(".chip"); if(!chip)return;
+  scoreMode=chip.dataset.m;
+  document.querySelectorAll("#scoreModeBox .chip").forEach(c=>c.dataset.on = (c.dataset.m===scoreMode)?"1":"0");
+  render();
+});
+/* openImage機能は削除済み（常に譜面ページを開く） */
+
+/* ---------- 絞り込みパネル ---------- */
+const GENRE_ORDER = ["POPS&ANIME","niconico","東方Project","VARIETY","イロドリミドリ","ゲキマイ","ORIGINAL"];
+function filterActive(){
+  return filterCmin!=null || filterCmax!=null || activeGenres!==null || activeVersions!==null
+    || filterLamps!==null || filterRanks!==null || filterScoreMin!=null || filterScoreMax!=null;
+}
+function allGenres(){
+  const set = new Set(songs.map(s=>s.genre).filter(Boolean));
+  const ordered = GENRE_ORDER.filter(g=>set.has(g));
+  for(const g of set){ if(!ordered.includes(g)) ordered.push(g); }  // 未知ジャンルも末尾に
+  return ordered;
+}
+function buildGenreChips(){
+  const box=document.getElementById("genreBox");
+  box.innerHTML = allGenres().map(g=>
+    '<span class="gchip" data-g="'+escapeAttr(g)+'" data-on="'+((!activeGenres||activeGenres.has(g))?"1":"0")+'">'+escapeHtml(g)+'</span>'
+  ).join("");
+}
+
+/* CHUNITHM バージョンの正式なリリース順（古い→新しい）。空文字=初代(無印)。 */
+const VERSION_ORDER = ["","PLUS","AIR","AIR PLUS","STAR","STAR PLUS","AMAZON","AMAZON PLUS",
+  "CRYSTAL","CRYSTAL PLUS","PARADISE","PARADISE LOST","NEW","NEW PLUS","SUN","SUN PLUS",
+  "LUMINOUS","LUMINOUS PLUS","VERSE","X-VERSE","X-VERSE-X","Mate"];
+const verLabel = v => (v==="" ? "初代" : v);
+function allVersions(){
+  // データに実在するバージョンを、正しい順序で（新しい順＝リストの後ろを先頭に）
+  const set = new Set(songs.map(s=>s.version==null?"":s.version));
+  const ordered = VERSION_ORDER.filter(v=>set.has(v)).reverse();     // 新しい順
+  for(const v of set){ if(!VERSION_ORDER.includes(v)) ordered.push(v); } // 未知は末尾
+  return ordered;
+}
+function buildVerChips(){
+  const box=document.getElementById("verBox");
+  box.innerHTML = allVersions().map(v=>
+    '<span class="gchip" data-v="'+escapeAttr(v)+'" data-on="'+((!activeVersions||activeVersions.has(v))?"1":"0")+'">'+escapeHtml(verLabel(v))+'</span>'
+  ).join("");
+}
+function buildConstOptions(){
+  // データに実在する定数値（降順）でプルダウンを作る
+  const vals = [...new Set(songs.map(s=>+s.const))].sort((a,b)=>b-a);
+  const opts = '<option value="">指定なし</option>' +
+    vals.map(v=>'<option value="'+v+'">'+v.toFixed(1)+'</option>').join("");
+  const cmin=document.getElementById("cmin"), cmax=document.getElementById("cmax");
+  cmin.innerHTML=opts; cmax.innerHTML=opts;
+  cmin.value = filterCmin!=null? String(filterCmin):"";
+  cmax.value = filterCmax!=null? String(filterCmax):"";
+}
+const fscrim=document.getElementById("fscrim");
+document.getElementById("filterBtn").onclick=()=>{
+  buildConstOptions();
+  buildGenreChips();
+  buildVerChips();
+  document.getElementById("smin").value = filterScoreMin!=null?filterScoreMin:"";
+  document.getElementById("smax").value = filterScoreMax!=null?filterScoreMax:"";
+  document.querySelectorAll("#rankBox .gchip").forEach(c=>c.dataset.on=(!filterRanks||filterRanks.has(c.dataset.r))?"1":"0");
+  document.querySelectorAll("#lampBox .gchip").forEach(c=>c.dataset.on=(!filterLamps||filterLamps.has(c.dataset.l))?"1":"0");
+  fscrim.dataset.open="1";
+};
+document.getElementById("fclose").onclick=()=>fscrim.dataset.open="0";
+fscrim.addEventListener("click",e=>{if(e.target===fscrim)fscrim.dataset.open="0";});
+document.getElementById("genreBox").addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c)return;
+  c.dataset.on = c.dataset.on==="1"?"0":"1";
+});
+document.getElementById("genreAll").onclick=()=>{document.querySelectorAll("#genreBox .gchip").forEach(c=>c.dataset.on="1");};
+document.getElementById("genreNone").onclick=()=>{document.querySelectorAll("#genreBox .gchip").forEach(c=>c.dataset.on="0");};
+document.getElementById("verBox").addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c)return;
+  c.dataset.on = c.dataset.on==="1"?"0":"1";
+});
+document.getElementById("verAll").onclick=()=>{document.querySelectorAll("#verBox .gchip").forEach(c=>c.dataset.on="1");};
+document.getElementById("verNone").onclick=()=>{document.querySelectorAll("#verBox .gchip").forEach(c=>c.dataset.on="0");};
+document.getElementById("lampBox").addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c)return;
+  c.dataset.on = c.dataset.on==="1"?"0":"1";
+});
+document.getElementById("lampAll").onclick=()=>{document.querySelectorAll("#lampBox .gchip").forEach(c=>c.dataset.on="1");};
+document.getElementById("lampNone").onclick=()=>{document.querySelectorAll("#lampBox .gchip").forEach(c=>c.dataset.on="0");};
+document.getElementById("rankBox").addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c)return;
+  c.dataset.on = c.dataset.on==="1"?"0":"1";
+});
+document.getElementById("rankAll").onclick=()=>{document.querySelectorAll("#rankBox .gchip").forEach(c=>c.dataset.on="1");};
+document.getElementById("rankNone").onclick=()=>{document.querySelectorAll("#rankBox .gchip").forEach(c=>c.dataset.on="0");};
+document.getElementById("fapply").onclick=()=>{
+  const vmin=parseFloat(document.getElementById("cmin").value);
+  const vmax=parseFloat(document.getElementById("cmax").value);
+  let lo = isNaN(vmin)?null:vmin;
+  let hi = isNaN(vmax)?null:vmax;
+  if(lo!=null && hi!=null && lo>hi){ const t=lo; lo=hi; hi=t; }  // 逆なら入替
+  filterCmin = lo;
+  filterCmax = hi;
+  const gchips=[...document.querySelectorAll("#genreBox .gchip")];
+  const gon=gchips.filter(c=>c.dataset.on==="1").map(c=>c.dataset.g);
+  activeGenres = (gon.length===gchips.length)? null : new Set(gon);
+  const vchips=[...document.querySelectorAll("#verBox .gchip")];
+  const von=vchips.filter(c=>c.dataset.on==="1").map(c=>c.dataset.v);
+  activeVersions = (von.length===vchips.length)? null : new Set(von);
+  const rchips=[...document.querySelectorAll("#rankBox .gchip")];
+  const ron=rchips.filter(c=>c.dataset.on==="1").map(c=>c.dataset.r);
+  filterRanks = (ron.length===rchips.length)? null : new Set(ron);
+  const lchips=[...document.querySelectorAll("#lampBox .gchip")];
+  const lon=lchips.filter(c=>c.dataset.on==="1").map(c=>c.dataset.l);
+  filterLamps = (lon.length===lchips.length)? null : new Set(lon);
+  const smin=parseInt(document.getElementById("smin").value,10);
+  const smax=parseInt(document.getElementById("smax").value,10);
+  let slo=isNaN(smin)?null:smin, shi=isNaN(smax)?null:smax;
+  if(slo!=null&&shi!=null&&slo>shi){const t=slo;slo=shi;shi=t;}
+  filterScoreMin=slo; filterScoreMax=shi;
+  fscrim.dataset.open="0";
+  render();
+};
+document.getElementById("freset").onclick=()=>{
+  filterCmin=null; filterCmax=null; activeGenres=null; activeVersions=null;
+  filterLamps=null; filterRanks=null; filterScoreMin=null; filterScoreMax=null;
+  document.getElementById("cmin").value="";
+  document.getElementById("cmax").value="";
+  document.getElementById("smin").value="";
+  document.getElementById("smax").value="";
+  document.querySelectorAll("#rankBox .gchip").forEach(c=>c.dataset.on="1");
+  document.querySelectorAll("#lampBox .gchip").forEach(c=>c.dataset.on="1");
+  buildGenreChips();
+  buildVerChips();
+  render();
+};
+
+/* ---------- modal ---------- */
+const scrim=document.getElementById("scrim");
+document.getElementById("setupBtn").onclick=()=>{
+  document.getElementById("paste").value = Object.keys(sdvxMap).length? JSON.stringify(sdvxMap):"";
+  scrim.dataset.open="1";
+};
+document.getElementById("closeBtn").onclick=()=>scrim.dataset.open="0";
+scrim.addEventListener("click",e=>{if(e.target===scrim)scrim.dataset.open="0";});
+document.getElementById("copyCode").onclick=()=>{
+  const code=document.getElementById("snip").textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    const b=document.getElementById("copyCode");b.textContent="コピー済み";setTimeout(()=>b.textContent="コピー",1500);
+  }).catch(()=>{});
+};
+document.getElementById("saveMap").onclick=()=>{
+  const msg=document.getElementById("saveMsg");
+  let raw=document.getElementById("paste").value.trim();
+  if(!raw){msg.innerHTML='<span class="bad">JSONが空です</span>';return;}
+  try{
+    const obj=JSON.parse(raw);
+    if(typeof obj!=="object"||Array.isArray(obj))throw new Error("形式が不正");
+    const r=mergeSdvx(obj);
+    markChanged("map");
+    msg.innerHTML='<span class="ok">反映しました（新規 '+r.added+' / 合計 '+r.total+'曲）'+(r.persisted?'':'・※このブラウザでは保存できないためタブを閉じると消えます')+'</span>';
+    render();
+  }catch(err){msg.innerHTML='<span class="bad">JSONの読み込み失敗: '+String(err)+'</span>';}
+};
+document.getElementById("clearMap").onclick=()=>{
+  sdvxMap={}; sdvxRaw={}; try{localStorage.removeItem(LS_KEY);}catch(e){}
+  document.getElementById("paste").value="";
+  document.getElementById("saveMsg").innerHTML='<span class="ok">消去しました</span>';
+  sortSongs();
+  render();
+};
+document.getElementById("fileInput").onchange=ev=>{
+  const msg=document.getElementById("saveMsg");
+  const f=ev.target.files&&ev.target.files[0];
+  if(!f){return;}
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const obj=JSON.parse(fr.result);
+      if(typeof obj!=="object"||Array.isArray(obj))throw new Error("形式が不正");
+      const r=mergeSdvx(obj);
+      markChanged("map");
+      msg.innerHTML='<span class="ok">読み込み成功（新規 '+r.added+' / 合計 '+r.total+'曲）'+(r.persisted?'・保存しました':'・※このブラウザでは保存できないためタブを閉じると消えます')+'</span>';
+      render();
+    }catch(err){msg.innerHTML='<span class="bad">ファイルの読み込み失敗: '+String(err)+'</span>';}
+  };
+  fr.onerror=()=>{msg.innerHTML='<span class="bad">ファイルを開けませんでした</span>';};
+  fr.readAsText(f,"utf-8");
+};
+document.getElementById("dataFile").onchange=ev=>{
+  const msg=document.getElementById("dataMsg");
+  const f=ev.target.files&&ev.target.files[0];
+  if(!f){return;}
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      let txt=fr.result; if(txt.charCodeAt(0)===0xFEFF)txt=txt.slice(1);
+      const data=JSON.parse(txt);
+      applyConstData(data, true);
+      markChanged("const");
+      msg.innerHTML='<span class="ok">定数表データ読み込み成功（'+songs.length+'譜面）</span>';
+      scrim.dataset.open="0";
+    }catch(err){msg.innerHTML='<span class="bad">読み込み失敗: '+String(err)+'</span>';}
+  };
+  fr.onerror=()=>{msg.innerHTML='<span class="bad">ファイルを開けませんでした</span>';};
+  fr.readAsText(f,"utf-8");
+};
+document.getElementById("scoreFile").onchange=ev=>{
+  const msg=document.getElementById("scoreMsg");
+  const f=ev.target.files&&ev.target.files[0];
+  if(!f){return;}
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      let txt=fr.result; if(txt.charCodeAt(0)===0xFEFF)txt=txt.slice(1);
+      const obj=JSON.parse(txt);
+      if(typeof obj!=="object"||Array.isArray(obj))throw new Error("形式が不正");
+      const ok=saveScores(obj);
+      markChanged("scores");
+      const n=Object.keys(obj).length;
+      // 実際に本ツールの譜面と紐付いた数を数える
+      let hit=0; for(const s of songs){ if(scoreOf(s)) hit++; }
+      msg.innerHTML='<span class="ok">スコア読み込み成功（'+n+'件・表示中データと一致 '+hit+'）'+(ok?'':'・※保存不可のためタブを閉じると消えます')+'</span>';
+      render();
+    }catch(err){msg.innerHTML='<span class="bad">読み込み失敗: '+String(err)+'</span>';}
+  };
+  fr.onerror=()=>{msg.innerHTML='<span class="bad">ファイルを開けませんでした</span>';};
+  fr.readAsText(f,"utf-8");
+};
+document.getElementById("scoreClear").onclick=()=>{
+  scores={}; try{localStorage.removeItem(LS_SCORE);}catch(e){}
+  document.getElementById("scoreMsg").innerHTML='<span class="ok">スコアを消去しました</span>';
+  render();
+};
+
+function debounce(fn,ms){let h;return(...a)=>{clearTimeout(h);h=setTimeout(()=>fn(...a),ms);};}
+
+/* ---------- 端末間同期（GitHub Gist） ----------
+   - 各データの最終更新時刻を meta に持ち、新しい方を正とする（手動で読み込んだ時刻）
+   - 読み込み時: markChanged → 1.5秒後にまとめてGistへ保存
+   - 起動時・アプリに戻った時: Gistの方が新しいデータを取り込む */
+const SYNC_TOKEN="chuni_sync_token_v1", SYNC_GIST="chuni_sync_gist_v1", SYNC_META="chuni_sync_meta_v1";
+const SYNC_DESC="chunithm-sdvx-linker sync (自動生成・削除しないでください)";
+const SYNC_FILES={map:"sdvx-map.json", scores:"scores.json", const:"const-data.json"};
+const SYNC_LABEL={map:"対応表", scores:"スコア", const:"定数表データ"};
+let syncBusy=false, syncTimer=null, lastPullAt=0;
+const pendingKinds=new Set();
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function syncToken(){return (lsGet(SYNC_TOKEN)||"").trim();}
+function syncMeta(){try{return JSON.parse(lsGet(SYNC_META)||"{}")||{};}catch(e){return {};}}
+function setSyncMeta(m){lsSet(SYNC_META,JSON.stringify(m));}
+function fmtTime(t){ if(!t) return "まだ"; return new Date(t).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}); }
+function refreshSyncStatus(msgHtml){
+  const st=document.getElementById("syncState");
+  if(st) st.textContent = syncToken() ? "この端末：同期ON（最終同期 "+fmtTime(syncMeta().lastSync)+"）" : "この端末：同期OFF";
+  if(msgHtml!==undefined){ const el=document.getElementById("syncMsg"); if(el) el.innerHTML=msgHtml; }
+}
+let toastTimer=null;
+function toast(text,bad){
+  let t=document.getElementById("toast");
+  if(!t){ t=document.createElement("div"); t.id="toast"; t.className="toast"; document.body.appendChild(t); }
+  t.textContent=text; t.classList.toggle("bad",!!bad); t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"), bad?6000:3000);
+}
+async function gh(path, opt){
+  opt=opt||{};
+  const headers={"Accept":"application/vnd.github+json","Authorization":"Bearer "+syncToken()};
+  if(opt.body) headers["Content-Type"]="application/json";
+  const res=await fetch("https://api.github.com"+path,{method:opt.method||"GET",headers,body:opt.body,cache:"no-store"});
+  if(res.status===401) throw new Error("トークンが無効です（貼り間違い・期限切れ・gist権限なし）");
+  if(res.status===403) throw new Error("GitHubに拒否されました（権限不足か、短時間に使いすぎ）");
+  if(res.status===404){ const e=new Error("見つかりません"); e.notFound=true; throw e; }
+  if(!res.ok) throw new Error("GitHubとの通信エラー（"+res.status+"）");
+  return res.status===204 ? null : res.json();
+}
+// 同期用Gistを探す（端末に記憶したID → 一覧から説明文で検索）。create=trueなら無ければ作る
+async function findGist(create){
+  const id=lsGet(SYNC_GIST);
+  if(id){ try{ return await gh("/gists/"+id); }catch(e){ if(!e.notFound) throw e; lsDel(SYNC_GIST); } }
+  for(let page=1; page<=10; page++){
+    const list=await gh("/gists?per_page=100&page="+page);
+    const hit=list.find(g=>g.description===SYNC_DESC);
+    if(hit){ lsSet(SYNC_GIST,hit.id); return await gh("/gists/"+hit.id); }
+    if(list.length<100) break;
+  }
+  if(!create) return null;
+  const g=await gh("/gists",{method:"POST",body:JSON.stringify({description:SYNC_DESC,public:false,
+    files:{"meta.json":{content:JSON.stringify({createdAt:Date.now()})}}})});
+  lsSet(SYNC_GIST,g.id);
+  return g;
+}
+async function readGistFile(g,name){
+  const f=g && g.files && g.files[name];
+  if(!f) return null;
+  let txt=f.content;
+  if(f.truncated || txt==null){        // 1MBを超えるファイルは本文が省略されるので raw から取る
+    const r=await fetch(f.raw_url,{cache:"no-store"});
+    if(!r.ok) throw new Error("クラウドのデータを読めませんでした（"+r.status+"）");
+    txt=await r.text();
+  }
+  return JSON.parse(txt);
+}
+function localData(kind){
+  if(kind==="map") return Object.keys(sdvxRaw).length ? sdvxRaw : null;
+  if(kind==="scores") return Object.keys(scores).length ? scores : null;
+  try{ return JSON.parse(lsGet(LS_DATA)||"null"); }catch(e){ return null; }
+}
+// データを手動で読み込んだ時に呼ぶ
+function markChanged(kind){
+  const m=syncMeta(); m[kind+"At"]=Date.now(); setSyncMeta(m);
+  if(!syncToken()) return;
+  pendingKinds.add(kind);
+  clearTimeout(syncTimer); syncTimer=setTimeout(flushPush,1500);
+}
+async function flushPush(){
+  if(syncBusy){ clearTimeout(syncTimer); syncTimer=setTimeout(flushPush,1500); return; }
+  const kinds=[...pendingKinds]; pendingKinds.clear();
+  if(kinds.length) await syncPush(kinds);
+}
+async function syncPush(kinds){
+  if(!syncToken()) return;
+  syncBusy=true; refreshSyncStatus("☁ クラウドに保存中…");
+  try{
+    const g=await findGist(true);
+    const rm=(await readGistFile(g,"meta.json"))||{};
+    const m=syncMeta(), files={}, done=[];
+    for(const k of kinds){
+      const data=localData(k); if(data==null) continue;
+      files[SYNC_FILES[k]]={content:JSON.stringify(data)};
+      rm[k+"At"]=m[k+"At"]||Date.now(); done.push(k);
+    }
+    if(done.length){
+      rm.updatedAt=Date.now();
+      files["meta.json"]={content:JSON.stringify(rm)};
+      await gh("/gists/"+g.id,{method:"PATCH",body:JSON.stringify({files})});
+    }
+    m.lastSync=Date.now(); setSyncMeta(m);
+    const txt="☁ クラウドに保存しました（"+done.map(k=>SYNC_LABEL[k]).join("・")+"）";
+    refreshSyncStatus('<span class="ok">'+txt+'</span>'); if(done.length) toast(txt);
+  }catch(e){
+    kinds.forEach(k=>pendingKinds.add(k));   // 次回の同期で再送
+    refreshSyncStatus('<span class="bad">保存に失敗：'+escapeHtml(e.message)+'</span>'); toast("☁ 保存に失敗："+e.message,true);
+  }finally{ syncBusy=false; }
+}
+// クラウドの方が新しいデータを取り込む。こちらの方が新しいものは保存し返す
+async function syncPull(opts){
+  opts=opts||{};
+  if(!syncToken() || syncBusy){ if(opts.onEmpty) opts.onEmpty(); return; }
+  syncBusy=true; lastPullAt=Date.now();
+  if(!opts.silent) refreshSyncStatus("☁ クラウドを確認中…");
+  const applied=[], toPush=[];
+  try{
+    const g=await findGist(false);
+    const rm=g ? ((await readGistFile(g,"meta.json"))||{}) : {};
+    const m=syncMeta();
+    for(const k of ["map","scores","const"]){
+      const remoteAt=rm[k+"At"]||0;
+      const localAt=m[k+"At"]||0;
+      const guardAt=k==="const" ? Math.max(localAt, m.constFetchedAt||0) : localAt;  // 自動取得した最新の定数表は上書きしない
+      if(g && remoteAt>guardAt){
+        const data=await readGistFile(g,SYNC_FILES[k]);
+        if(data==null) continue;
+        if(k==="map"){ sdvxRaw=data; persistMap(sdvxRaw); sdvxMap=rekeyMap(sdvxRaw); }
+        else if(k==="scores"){ saveScores(data); }
+        else { applyConstData(data,true); }
+        m[k+"At"]=remoteAt; applied.push(k);
+      }else if(localAt>remoteAt && localData(k)!=null){
+        toPush.push(k);
+      }
+    }
+    m.lastSync=Date.now(); setSyncMeta(m);
+  }catch(e){
+    syncBusy=false;
+    refreshSyncStatus('<span class="bad">同期に失敗：'+escapeHtml(e.message)+'</span>');
+    toast("☁ 同期に失敗："+e.message,true);
+    if(opts.onEmpty && !songs.length) opts.onEmpty();
+    return;
+  }
+  syncBusy=false;
+  if(applied.includes("map")) sortSongs();
+  if(applied.length){
+    render();
+    const txt="☁ クラウドから最新の"+applied.map(k=>SYNC_LABEL[k]).join("・")+"を取り込みました";
+    refreshSyncStatus('<span class="ok">'+txt+'</span>'); toast(txt);
+  }else{
+    refreshSyncStatus(opts.silent ? undefined : '<span class="ok">☁ 最新の状態です</span>');
+  }
+  if(opts.onEmpty && !songs.length) opts.onEmpty();
+  if(toPush.length){ toPush.forEach(k=>pendingKinds.add(k)); flushPush(); }
+}
+document.getElementById("syncSave").onclick=async()=>{
+  const v=document.getElementById("syncToken").value.trim();
+  if(!v){ refreshSyncStatus('<span class="bad">トークンを貼り付けてください</span>'); return; }
+  lsSet(SYNC_TOKEN,v); lsDel(SYNC_GIST);
+  document.getElementById("syncToken").value="";
+  refreshSyncStatus("☁ 接続を確認中…");
+  try{ await gh("/gists?per_page=1"); }
+  catch(e){ lsDel(SYNC_TOKEN); refreshSyncStatus('<span class="bad">'+escapeHtml(e.message)+'</span>'); return; }
+  await syncPull({});
+};
+document.getElementById("syncNow").onclick=()=>{
+  if(!syncToken()){ refreshSyncStatus('<span class="bad">先にトークンを保存してください</span>'); return; }
+  syncPull({});
+};
+document.getElementById("syncOff").onclick=()=>{
+  lsDel(SYNC_TOKEN); lsDel(SYNC_GIST);
+  refreshSyncStatus('<span class="ok">この端末の同期をOFFにしました（クラウドのデータは残ります）</span>');
+};
+// iPhoneのホーム画面アプリ等で、アプリに戻ってきた時にも最新を取り込む（1分に1回まで）
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible" && syncToken() && Date.now()-lastPullAt>60000) syncPull({silent:true});
+});
+
+/* ---------- ブックマークレットのコードをコピー（iPhone/iPad登録用） ---------- */
+function copyText(t){
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(t).then(()=>true).catch(()=>fallbackCopy(t));
+  }
+  return Promise.resolve(fallbackCopy(t));
+}
+function fallbackCopy(t){
+  const ta=document.createElement("textarea"); ta.value=t; ta.setAttribute("readonly","");
+  ta.style.cssText="position:fixed;top:0;left:0;opacity:0";
+  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length);
+  let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+  ta.remove(); return ok;
+}
+document.querySelectorAll("a.bmlet").forEach(a=>{
+  const b=document.createElement("button");
+  b.type="button"; b.className="btn bmcopy"; b.textContent="コードをコピー";
+  b.addEventListener("click",()=>{
+    copyText(a.getAttribute("href")).then(ok=>{
+      b.textContent = ok ? "コピーしました" : "コピー失敗";
+      setTimeout(()=>{ b.textContent="コードをコピー"; },1800);
+    });
+  });
+  a.insertAdjacentElement("afterend", b);
+});
+
+init();
+</script>
+</body>
+</html>
