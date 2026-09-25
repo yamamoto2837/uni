@@ -60,6 +60,9 @@
   .search svg{flex:none;opacity:.6}
 
   .diffs{display:flex;gap:6px}
+  .chiprow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  header{transition:transform .22s ease}
+  header.hide{transform:translateY(-100%)}
   .chip{cursor:pointer;user-select:none;font-size:12px;font-weight:700;letter-spacing:.5px;
     padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.15s}
   .chip[data-on="1"]{color:#fff}
@@ -231,18 +234,37 @@
   }
   /* スマホ（縦） */
   @media(max-width:600px){
-    .bar{gap:10px}
-    .brand .t{font-size:17px}
-    .brand .s{font-size:10px;margin-top:4px}
-    .controls{width:100%;margin-left:0;gap:8px;flex-wrap:wrap}
-    .search{order:-1;width:100%;min-width:0;flex:1 1 100%}
-    .diffs{flex:1 1 auto}
-    .diffs .chip{flex:1 1 0;text-align:center}
-    #filterBtn,#setupBtn{flex:1 1 auto;text-align:center}
-    .status{font-size:11px;gap:10px}
-    .grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+    /* ① ヘッダー圧縮：1行目=検索＋⛃＋⚙、2行目=チップを横スクロール */
+    .brand{display:none}
+    .bar{padding:8px 10px 6px;gap:6px}
+    .controls{width:100%;margin-left:0;gap:6px;flex-wrap:wrap}
+    .search{order:1;flex:1 1 0;min-width:0;padding:6px 12px}
+    #filterBtn,#setupBtn{order:2;flex:0 0 auto;padding:6px 11px}
+    .bt{display:none}
+    .bi{font-size:15px;line-height:1}
+    .chiprow{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;gap:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .chiprow::-webkit-scrollbar{display:none}
+    .diffs{flex:0 0 auto}
+    .diffs .chip{flex:none;padding:5px 10px}
+    .status{font-size:10px;gap:10px;padding:0 10px 6px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+    .st-hint{display:none}
+    /* ② 1行5譜面・曲名なし */
+    main{padding:8px 8px 80px}
+    .levblock{margin:12px 0}
+    .levhead{margin:0 0 6px}
+    .grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+    .tile{gap:0}
+    .ttl{display:none}
+    .jacket{border-width:2px;border-radius:6px;box-shadow:none}
+    .badge{font-size:8px;padding:1px 3px;left:2px;top:2px;border-radius:3px;letter-spacing:0}
+    .cst{font-size:9px;padding:0 3px;right:2px;bottom:2px;border-radius:3px}
+    .lamp{font-size:8px;padding:1px 3px;left:2px;bottom:2px;border-radius:3px;letter-spacing:0}
+    .nolinktag{font-size:8px;padding:1px 3px}
+    .jacket .rankbig{font-size:22px;-webkit-text-stroke-width:1px}
+    .jacket .rankbig.rk-sssp{font-size:17px}
+    .jacket .scorebig{font-size:10px;padding:0 1px;letter-spacing:0;-webkit-text-stroke-width:.4px}
+    .jacket.noimg::after{font-size:8px;padding:3px}
     .levhead .num{font-size:22px}
-    .ttl{font-size:11px}
     /* モーダルを全面に近づけて操作しやすく */
     .scrim{padding:0;align-items:stretch}
     .modal{width:100%;min-height:100%;border-radius:0}
@@ -256,7 +278,7 @@
   }
   /* 極小幅 */
   @media(max-width:360px){
-    .grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+    .grid{gap:3px}
   }
 </style>
 </head>
@@ -273,6 +295,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input id="q" type="text" placeholder="曲名・アーティストで検索…" autocomplete="off">
       </label>
+      <div class="chiprow">
       <div class="diffs" id="diffs">
         <span class="chip exp" data-d="EXP" data-on="0">EXP</span>
         <span class="chip mas" data-d="MAS" data-on="1">MAS</span>
@@ -283,8 +306,9 @@
         <span class="chip sm" data-m="score" data-on="0">スコア</span>
         <span class="chip sm" data-m="off" data-on="1">OFF</span>
       </div>
-      <button class="btn" id="filterBtn">⛃ 絞り込み</button>
-      <button class="btn warn" id="setupBtn">⚙ 設定</button>
+      </div>
+      <button class="btn" id="filterBtn" aria-label="絞り込み"><span class="bi">⛃</span><span class="bt"> 絞り込み</span></button>
+      <button class="btn warn" id="setupBtn" aria-label="設定"><span class="bi">⚙</span><span class="bt"> 設定</span></button>
     </div>
   </div>
   <div class="status" id="status"></div>
@@ -763,7 +787,7 @@ function render(){
     st.innerHTML = '<span>表示中 <b>'+shown+'</b> 譜面</span>'+
       '<span>sdvxマッチ <b>'+matched+'</b> / '+shown+'</span>'+
       (filterActive()? '<span style="color:var(--cyan)">● 絞り込み中</span>':'')+
-      '<span style="color:#6b73a0">（未マッチはsdvxトップへフォールバック）</span>';
+      '<span class="st-hint" style="color:#6b73a0">（未マッチはsdvxトップへフォールバック）</span>';
   }
 
   if(shown===0){
@@ -1248,6 +1272,25 @@ document.getElementById("syncOff").onclick=()=>{
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible" && syncToken() && Date.now()-lastPullAt>60000) syncPull({silent:true});
 });
+
+/* ---------- スマホ：下スクロールでヘッダーを隠し、上スクロールで出す ---------- */
+(function(){
+  const hdr=document.querySelector("header");
+  const mq=window.matchMedia("(max-width:600px)");
+  let lastY=window.scrollY, ticking=false;
+  function onScroll(){
+    const y=window.scrollY;
+    if(!mq.matches){ hdr.classList.remove("hide"); lastY=y; return; }
+    const dy=y-lastY;
+    if(y < hdr.offsetHeight) hdr.classList.remove("hide");
+    else if(dy>8) hdr.classList.add("hide");
+    else if(dy<-8) hdr.classList.remove("hide");
+    if(Math.abs(dy)>8) lastY=y;
+  }
+  window.addEventListener("scroll",()=>{ if(!ticking){ ticking=true; requestAnimationFrame(()=>{ onScroll(); ticking=false; }); } },{passive:true});
+  if(mq.addEventListener) mq.addEventListener("change",()=>hdr.classList.remove("hide"));
+  document.getElementById("q").addEventListener("focus",()=>hdr.classList.remove("hide"));
+})();
 
 /* ---------- ブックマークレットのコードをコピー（iPhone/iPad登録用） ---------- */
 function copyText(t){
