@@ -551,6 +551,13 @@
 const SDVX_BASE = "https://sdvx.in/chunithm/";
 const JACKET_BASE = "https://reiwa.f5.si/jackets/chunithm/";
 const DATA_URL = "https://reiwa.f5.si/chunithm_record.json";
+// 定数表データの取得元（優先順）。qmanさんの定数表と同じ chunisupport.net 版を優先し、取れない時だけ reiwa.f5.si を使う。
+// 権利切れの削除もデータ側で反映されるので、曲数では選ばない（データはまるごと置き換えるので削除曲は一覧から消える）
+const DATA_URLS = [
+  "https://static.chunisupport.net/compat/reiwa/1/chunithm_record/original.json",
+  DATA_URL
+];
+let constSource = "";
 const LS_KEY = "sdvx_chunithm_map_v1";
 const DIFF_ORDER = ["ULT","MAS","EXP"];     // 表示・優先順
 const SHOW_DIFFS = new Set(["EXP","MAS","ULT"]);
@@ -706,11 +713,24 @@ async function init(){
   }catch(e){}
   // 2) 最新を取りに行く（成功すれば更新＆キャッシュ）
   try{
-    const res = await fetch(DATA_URL, {cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    let txt = await res.text();
-    if(txt.charCodeAt(0)===0xFEFF) txt = txt.slice(1); // BOM
-    applyConstData(JSON.parse(txt), true);
+    const one = async u => {
+      const ac = (typeof AbortController==="function") ? new AbortController() : null;
+      const tm = setTimeout(()=>{ try{ ac && ac.abort(); }catch(e){} }, 20000);
+      try{
+        const res = await fetch(u, ac ? {cache:"no-store", signal:ac.signal} : {cache:"no-store"});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        let txt = await res.text();
+        if(txt.charCodeAt(0)===0xFEFF) txt = txt.slice(1); // BOM
+        const d = JSON.parse(txt);
+        if(!Array.isArray(d) || !d.length) throw new Error("空のデータ");
+        return {u, d};
+      } finally { clearTimeout(tm); }
+    };
+    let best=null, lastErr=null;
+    for(const u of DATA_URLS){ try{ best=await one(u); break; }catch(e){ lastErr=e; } }
+    if(!best) throw lastErr || new Error("取得失敗");
+    constSource = new URL(best.u).hostname;
+    applyConstData(best.d, true);
     const sm=syncMeta(); sm.constFetchedAt=Date.now(); setSyncMeta(sm);
   }catch(err){
     if(!hadCache && !syncToken()) showDataError(String(err));
@@ -807,6 +827,7 @@ function render(){
       const linked = !!stem;
       const direct = JACKET_BASE + s.img + ".webp";
       const cand = [
+        "https://image.chunisupport.net/jackets/chunithm/" + s.img + ".webp",
         "https://images.weserv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
         "https://wsrv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
         direct
