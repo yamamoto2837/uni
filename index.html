@@ -123,7 +123,7 @@
   .badge.mas{background:var(--mas)}
   .badge.ult{background:var(--ult-stripe-sm);text-shadow:0 0 3px #000,0 1px 2px #000;border:1px solid rgba(0,0,0,.5)}
   .cst{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:900;color:#fff;
-    background:rgba(0,0,0,.66);padding:2px 6px;border-radius:5px;backdrop-filter:blur(2px)}
+    background:rgba(0,0,0,.72);padding:2px 6px;border-radius:5px}
 
   /* unmatched overlay */
   .tile.nolink .jacket::after{content:"";position:absolute;inset:0;background:rgba(8,9,16,.55)}
@@ -133,7 +133,16 @@
 
   .ttl{font-size:12px;line-height:1.35;color:var(--text);    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
   /* ジャケット暗幕（ランク/スコア表示時） */
-  .jacket.dim img{filter:brightness(.5)}
+  /* filterは端末に重いので、半透明の黒を重ねて暗くする */
+  .jacket.sc::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:1;pointer-events:none}
+  /* 表示モードは描き直さずにクラスの切り替えだけで変える（ランク/スコア/OFF） */
+  main.m-off .jacket.sc::before, main.m-off .lamp, main.m-off .rankbig, main.m-off .scorebig{display:none}
+  main.m-rank .scorebig{display:none}
+  main.m-score .rankbig{display:none}
+  main.m-rank .jacket.sc:not(.rk)::before{display:none}
+  .jacket .badge,.jacket .cst,.jacket .nolinktag{z-index:2}   /* 暗幕より手前に */
+  /* 画面外の段は描画を省略（スクロール・再描画を軽く） */
+  .levblock{content-visibility:auto;contain-intrinsic-size:auto 600px}
   /* ランク特大オーバーレイ */
   .rankbig{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
     font-family:"Fugaz One","Dela Gothic One",cursive;font-style:normal;font-weight:400;
@@ -161,6 +170,7 @@
   .lamp-ajc{background:linear-gradient(120deg,#ff4d4d,#ffd24d,#4dff88,#4dd2ff,#b84dff);
     background-size:200% 100%;animation:ajc 3s linear infinite;color:#fff}
   @keyframes ajc{to{background-position:200% 0}}
+  @media(prefers-reduced-motion:reduce){.lamp-ajc{animation:none}}
 
   /* ---- modal ---- */
   .scrim{position:fixed;inset:0;z-index:100;background:rgba(4,5,10,.72);backdrop-filter:blur(4px);
@@ -248,6 +258,13 @@
     .diffs .chip{flex:none;padding:5px 10px}
     .status{font-size:10px;gap:10px;padding:0 10px 6px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
     .st-hint{display:none}
+    /* 軽量化：ぼかし・フィルター・常時アニメーションを使わない */
+    header{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(10,12,20,.97)}
+    .tile.nolink .jacket{filter:none}
+    .tile.nolink .jacket::after{background:rgba(8,9,16,.68)}
+    .lamp-ajc{animation:none;background-size:100% 100%}
+    .tile{transition:none}
+    .rankbig,.scorebig{text-shadow:none}
     /* ② 1行5譜面・曲名なし */
     main{padding:8px 8px 80px}
     .levblock{margin:12px 0}
@@ -314,7 +331,7 @@
   <div class="status" id="status"></div>
 </header>
 
-<main id="main">
+<main id="main" class="m-off">
   <div class="center">
     <div class="spin"></div>
     <div>定数表データを読み込んでいます…</div>
@@ -562,7 +579,7 @@ const LS_KEY = "sdvx_chunithm_map_v1";
 const DIFF_ORDER = ["ULT","MAS","EXP"];     // 表示・優先順
 const SHOW_DIFFS = new Set(["EXP","MAS","ULT"]);
 
-const norm = s => (s||"")
+const normRaw = s => (s||"")
   .normalize("NFKD")                              // é→e+´ などに分解
   .replace(/[\u0300-\u036f]/g,"")                 // 分解した発音記号を除去
   .normalize("NFKC")                              // 全角→半角など
@@ -583,6 +600,7 @@ let filterCmin = null, filterCmax = null;   // 定数の最小・最大
 let activeGenres = null;                     // null=全ジャンル / Set=選択中
 let activeVersions = null;                   // null=全バージョン / Set=選択中
 let scoreMode = "off";                        // rank=ランク特大 / score=スコア / off=非表示
+function applyScoreMode(){ const m=document.getElementById("main"); m.classList.remove("m-off","m-rank","m-score"); m.classList.add("m-"+scoreMode); }
 let filterLamps = null;                       // null=全ランプ / Set=選択中(AJC/AJ/FC/none)
 let filterRanks = null;                       // null=全ランク区分 / Set=選択中(rk-*)
 let filterScoreMin = null, filterScoreMax = null;  // スコア数値範囲
@@ -596,6 +614,14 @@ const ALIASES = {
   "Solstånd": "Solsånd",
 };
 const aliasMap = {};     // norm(定数表名) -> norm(sdvx名)
+// 曲名の正規化は重いので結果を覚えておく（描画・検索のたびに何千回も呼ばれる）
+const normCache = new Map();
+function norm(s){
+  s = s||"";
+  let v = normCache.get(s);
+  if(v===undefined){ v = normRaw(s); if(normCache.size>30000) normCache.clear(); normCache.set(s,v); }
+  return v;
+}
 function buildAliases(){ for(const k in ALIASES){ aliasMap[norm(k)] = norm(ALIASES[k]); } }
 buildAliases();
 
@@ -666,11 +692,15 @@ function rankClass(rank){
 const LS_DATA = "chuni_const_data_v1";
 
 let baseSongs = [];      // 定数表データ（表示難易度のみ・データの並び順のまま）
-function applyConstData(data, persist){
+let constSig = "";
+function applyConstData(data, persist, raw){
   if(!Array.isArray(data)) throw new Error("配列ではありません");
+  const str = raw || JSON.stringify(data);
+  if(str === constSig) return;            // 中身が同じなら描き直さない（起動時の二重描画を防ぐ）
+  constSig = str;
   baseSongs = data.filter(s => SHOW_DIFFS.has(s.diff));
   sortSongs();
-  if(persist){ try{localStorage.setItem(LS_DATA, JSON.stringify(data));}catch(e){} }
+  if(persist){ try{localStorage.setItem(LS_DATA, str);}catch(e){} }
   render();
 }
 // sdvx.in の譜面ID（例 "10/10263mst" → 10263）。sdvx.in は実装順に譜面を追加するので、実装順の目安になる
@@ -709,7 +739,7 @@ async function init(){
   let hadCache=false;
   try{
     const c=localStorage.getItem(LS_DATA);
-    if(c){ applyConstData(JSON.parse(c), false); hadCache=true; }
+    if(c){ applyConstData(JSON.parse(c), false, c); hadCache=true; }
   }catch(e){}
   // 2) 最新を取りに行く（成功すれば更新＆キャッシュ）
   try{
@@ -723,14 +753,14 @@ async function init(){
         if(txt.charCodeAt(0)===0xFEFF) txt = txt.slice(1); // BOM
         const d = JSON.parse(txt);
         if(!Array.isArray(d) || !d.length) throw new Error("空のデータ");
-        return {u, d};
+        return {u, d, txt};
       } finally { clearTimeout(tm); }
     };
     let best=null, lastErr=null;
     for(const u of DATA_URLS){ try{ best=await one(u); break; }catch(e){ lastErr=e; } }
     if(!best) throw lastErr || new Error("取得失敗");
     constSource = new URL(best.u).hostname;
-    applyConstData(best.d, true);
+    applyConstData(best.d, true, best.txt);
     const sm=syncMeta(); sm.constFetchedAt=Date.now(); setSyncMeta(sm);
   }catch(err){
     if(!hadCache && !syncToken()) showDataError(String(err));
@@ -817,59 +847,83 @@ function render(){
   }
 
   const sortedKeys = [...groups.keys()].sort((a,b)=>parseFloat(b)-parseFloat(a));
-  let html="";
-  for(const k of sortedKeys){
-    html += '<section class="levblock"><div class="levhead"><span class="num">'+k+'</span><span class="rule"></span></div><div class="grid">';
-    for(const s of groups.get(k)){
-      const d = s.diff;                    // EXP/MAS/ULT
-      const cls = d.toLowerCase();
-      const stem = hasMap ? sdvxStem(s.title,d) : null;
-      const linked = !!stem;
-      const direct = JACKET_BASE + s.img + ".webp";
-      const cand = [
-        "https://image.chunisupport.net/jackets/chunithm/" + s.img + ".webp",
-        "https://images.weserv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
-        "https://wsrv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+s.img+".webp"),
-        direct
-      ];
-      const dataAttr = linked ? ('data-stem="'+stem+'"') : 'data-fallback="1"';
-      const sc = scoreOf(s);
-      const lamp = (sc && sc.aj && scoreMode!=="off") ? '<span class="lamp lamp-'+sc.aj.toLowerCase()+'">'+sc.aj+'</span>' : '';
-      // 表示モード: rank=ランク特大 / score=スコア数値 / off=なし
-      let overlay='', dimClass='';
-      if(sc && scoreMode==="rank" && sc.rank){
-        overlay='<span class="rankbig '+rankClass(sc.rank)+'">'+escapeHtml(sc.rank)+'</span>';
-        dimClass=' dim';
-      }else if(sc && scoreMode==="score"){
-        overlay='<span class="scorebig '+rankClass(sc.rank)+'">'+Number(sc.score).toLocaleString()+'</span>';
-        dimClass=' dim';
-      }
-      html += '<button class="tile '+cls+(hasMap && !linked?' nolink':'')+'" '+dataAttr+' title="'+escapeAttr(s.title)+' ['+d+']'+(sc?' '+(sc.rank||'')+' '+Number(sc.score).toLocaleString():'')+'">'
-        + '<div class="jacket'+dimClass+'" data-name="'+escapeAttr(s.title)+'">'
-          + '<img src="'+cand[0]+'" data-cand="'+escapeAttr(JSON.stringify(cand))+'" data-i="0" loading="lazy" referrerpolicy="no-referrer" '
-          + 'onerror="(function(im){var c=JSON.parse(im.dataset.cand);var i=(+im.dataset.i)+1;if(i&lt;c.length){im.dataset.i=i;im.src=c[i];}else{im.onerror=null;im.style.display=\'none\';im.parentNode.classList.add(\'noimg\');}})(this)" alt="">'
-          + '<span class="badge '+cls+'">'+d+'</span>'
-          + '<span class="cst">'+s.const.toFixed(1)+'</span>'
-          + lamp
-          + overlay
-          + (hasMap && !linked ? '<span class="nolinktag">sdvx未マッチ</span>' : '')
-        + '</div>'
-        + '<span class="ttl">'+escapeHtml(s.title)+'</span>'
-      + '</button>';
+  // 一度に全部作ると重いので、最初の画面分だけすぐ描いて、残りは少しずつ追加する
+  const token = ++renderToken;
+  const prevH = main.offsetHeight;
+  main.style.minHeight = prevH ? prevH+"px" : "";      // 描き直し中にスクロール位置が飛ばないように
+  main.innerHTML = "";
+  let bi = 0;
+  const pump = (budget)=>{
+    if(token!==renderToken) return;                    // 新しい描画が始まったら中止
+    let n=0, html="";
+    while(bi<sortedKeys.length && n<budget){
+      const k=sortedKeys[bi++], list=groups.get(k);
+      html += '<section class="levblock"><div class="levhead"><span class="num">'+k+'</span><span class="rule"></span></div><div class="grid">';
+      for(const s of list) html += tileHtml(s, hasMap);
+      html += '</div></section>';
+      n += list.length;
     }
-    html += '</div></section>';
-  }
-  main.innerHTML = html;
-
-  // bind clicks
-  main.querySelectorAll(".tile").forEach(t=>{
-    t.addEventListener("click",()=>{
-      const stem = t.getAttribute("data-stem");
-      const url = stem ? sdvxUrl(stem) : "https://sdvx.in/chunithm.html";
-      window.open(url, "_blank", "noopener");
-    });
-  });
+    main.insertAdjacentHTML("beforeend", html);
+    if(bi<sortedKeys.length) setTimeout(()=>pump(150), 0);
+    else main.style.minHeight = "";
+  };
+  pump(80);
 }
+let renderToken = 0;
+// ジャケット画像の取得先（上から順に試す）
+function jacketCands(img){
+  return [
+    "https://image.chunisupport.net/jackets/chunithm/" + img + ".webp",
+    "https://images.weserv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+img+".webp"),
+    "https://wsrv.nl/?url=" + encodeURIComponent("reiwa.f5.si/jackets/chunithm/"+img+".webp"),
+    JACKET_BASE + img + ".webp"
+  ];
+}
+function tileHtml(s, hasMap){
+  const d = s.diff;                    // EXP/MAS/ULT
+  const cls = d.toLowerCase();
+  const stem = hasMap ? sdvxStem(s.title,d) : null;
+  const linked = !!stem;
+  const dataAttr = linked ? ('data-stem="'+stem+'"') : 'data-fallback="1"';
+  const sc = scoreOf(s);
+  const lamp = (sc && sc.aj) ? '<span class="lamp lamp-'+sc.aj.toLowerCase()+'">'+sc.aj+'</span>' : '';
+  // ランクとスコアの両方を入れておき、表示モード（rank/score/off）は main のクラスで出し分ける
+  let overlay='', dimClass='';
+  if(sc){
+    const rc = rankClass(sc.rank);
+    if(sc.rank) overlay += '<span class="rankbig '+rc+'">'+escapeHtml(sc.rank)+'</span>';
+    overlay += '<span class="scorebig '+rc+'">'+Number(sc.score).toLocaleString()+'</span>';
+    dimClass = ' sc'+(sc.rank?' rk':'');
+  }
+  const img = escapeAttr(String(s.img||""));
+  return '<button class="tile '+cls+(hasMap && !linked?' nolink':'')+'" '+dataAttr+' title="'+escapeAttr(s.title)+' ['+d+']'+(sc?' '+(sc.rank||'')+' '+Number(sc.score).toLocaleString():'')+'">'
+    + '<div class="jacket'+dimClass+'" data-name="'+escapeAttr(s.title)+'">'
+      + '<img src="'+jacketCands(img)[0]+'" data-img="'+img+'" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="">'
+      + '<span class="badge '+cls+'">'+d+'</span>'
+      + '<span class="cst">'+s.const.toFixed(1)+'</span>'
+      + lamp
+      + overlay
+      + (hasMap && !linked ? '<span class="nolinktag">sdvx未マッチ</span>' : '')
+    + '</div>'
+    + '<span class="ttl">'+escapeHtml(s.title)+'</span>'
+  + '</button>';
+}
+// クリックと画像の読み込み失敗は、タイル1枚ずつではなく一覧全体でまとめて受ける（軽量化）
+(function(){
+  const main = document.getElementById("main");
+  main.addEventListener("click", e=>{
+    const t = e.target.closest(".tile"); if(!t || !main.contains(t)) return;
+    const stem = t.getAttribute("data-stem");
+    const url = stem ? sdvxUrl(stem) : "https://sdvx.in/chunithm.html";
+    window.open(url, "_blank", "noopener");
+  });
+  main.addEventListener("error", e=>{
+    const im = e.target; if(!im || im.tagName!=="IMG" || im.dataset.img==null) return;
+    const c = jacketCands(im.dataset.img); const i = (+(im.dataset.i||0))+1;
+    if(i<c.length){ im.dataset.i=i; im.src=c[i]; }
+    else { im.style.display="none"; im.parentNode.classList.add("noimg"); }
+  }, true);
+})();
 
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 function escapeAttr(s){return s.replace(/["&<>]/g,c=>({'"':"&quot;","&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
@@ -887,7 +941,7 @@ document.getElementById("scoreModeBox").addEventListener("click",e=>{
   const chip=e.target.closest(".chip"); if(!chip)return;
   scoreMode=chip.dataset.m;
   document.querySelectorAll("#scoreModeBox .chip").forEach(c=>c.dataset.on = (c.dataset.m===scoreMode)?"1":"0");
-  render();
+  applyScoreMode();   // 描き直さない（クラスの付け替えだけ）
 });
 /* openImage機能は削除済み（常に譜面ページを開く） */
 
