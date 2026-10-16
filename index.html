@@ -818,15 +818,17 @@ function sdvxOrder(s){
   const m = st && String(st).match(/(\d+)(?:mst|exp)$/);
   return m ? +m[1] : Infinity;   // 対応表に無い曲（sdvx.in未掲載の新曲など）は後ろへ
 }
-// 並び順: 定数の高い順 → 同定数は配信日（バージョン）の古い順
-//   → 同じなら sdvx.in の譜面ID順（≒実装順）→ 対応表に無い曲は公式idx順 → データ順
+// 並び順は qman さんの定数表と同じ：定数の高い順 → 配信日（release）の古い順 → データの並び順。
+// （定数表は chunisupport.net のデータを使い、同じ配信日の曲はデータの並び＝実装順のまま並べている）
+// 予備の reiwa.f5.si のデータを使っている時だけは並びが実装順と違うことがあるので、sdvx.in の譜面ID順で補う。
 function sortSongs(){
   const idxNum = s => { const n = parseInt(s.idx, 10); return isNaN(n) ? Infinity : n; };
-  const key = new Map(baseSongs.map(s=>[s, sdvxOrder(s)]));
-  songs = baseSongs.map((s,i)=>({s,i,o:key.get(s)}))
+  const useSdvx = constSource==="reiwa.f5.si";
+  const key = useSdvx ? new Map(baseSongs.map(s=>[s, sdvxOrder(s)])) : null;
+  songs = baseSongs.map((s,i)=>({s,i,o:useSdvx?key.get(s):0}))
     .sort((a,b)=> (b.s.const-a.s.const) || (a.s.release-b.s.release)
-                  || ((a.o===b.o)?0:(a.o<b.o?-1:1))
-                  || (idxNum(a.s)-idxNum(b.s)) || (a.i-b.i))
+                  || (useSdvx ? (((a.o===b.o)?0:(a.o<b.o?-1:1)) || (idxNum(a.s)-idxNum(b.s))) : 0)
+                  || (a.i-b.i))
     .map(x=>x.s);
 }
 
@@ -871,6 +873,7 @@ async function init(){
     if(!best) throw lastErr || new Error("取得失敗");
     constSource = new URL(best.u).hostname;
     applyConstData(best.d, true, best.txt);
+    if(constSource==="reiwa.f5.si"){ sortSongs(); render(); }   // 予備データの時は並びを補正
     const sm=syncMeta(); sm.constFetchedAt=Date.now(); setSyncMeta(sm);
   }catch(err){
     if(!hadCache && !syncToken()) showDataError(String(err));
