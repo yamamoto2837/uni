@@ -170,6 +170,30 @@
   .lamp-ajc{background:linear-gradient(120deg,#ff4d4d,#ffd24d,#4dff88,#4dd2ff,#b84dff);
     background-size:200% 100%;animation:ajc 3s linear infinite;color:#fff}
   @keyframes ajc{to{background-position:200% 0}}
+  /* ---- 目印（旗） ---- */
+  .pf{position:absolute;top:5px;right:5px;display:flex;gap:2px;z-index:3;pointer-events:none}
+  .pf i{display:block;width:10px;height:15px;background:var(--c);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%);
+    box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  .pinbtn.on{border-color:#ff4d6d;background:rgba(255,77,109,.18);color:#fff}
+  .modebar{display:none;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 20px;max-width:1400px;margin:0 auto;font-size:13px}
+  header.pinmode{border-bottom-color:rgba(255,77,109,.6)}
+  header.pinmode .modebar{display:flex}
+  .modebar .mt{font-weight:700;color:#fff}
+  .modebar .mh2{font-size:11px;color:var(--muted)}
+  .modebar .cur{display:flex;gap:6px;flex-wrap:wrap;order:3;flex:1 1 100%}
+  .modebar .cur span{cursor:pointer;user-select:none;white-space:nowrap;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
+    font-weight:700;font-size:12px;color:#b8bfe6;display:inline-flex;align-items:center;gap:6px}
+  .modebar .cur span i,.pinchip i,.pinname i{display:inline-block;width:9px;height:13px;background:var(--c);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+  .modebar .cur span.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,transparent);color:#fff}
+  .modebar .end{order:2;margin-left:auto;padding:4px 12px}
+  main.pinmode .tile{cursor:copy}
+  .tile.pinflash .jacket{outline:3px solid #fff;outline-offset:-3px}
+  .pinchip i{margin-right:5px;vertical-align:-1px}
+  .pinname{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .pinname i{width:12px;height:17px;flex:none}
+  .pinname input{flex:1 1 auto;min-width:0;max-width:260px;background:#070912;border:1px solid var(--line);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:14px;padding:8px 10px}
+  .pinname input:focus{outline:none;border-color:var(--cyan)}
   @media(prefers-reduced-motion:reduce){.lamp-ajc{animation:none}}
 
   /* ---- modal ---- */
@@ -276,6 +300,13 @@
     .badge{font-size:8px;padding:1px 3px;left:2px;top:2px;border-radius:3px;letter-spacing:0}
     .cst{font-size:9px;padding:0 3px;right:2px;bottom:2px;border-radius:3px}
     .lamp{font-size:8px;padding:1px 3px;left:2px;bottom:2px;border-radius:3px;letter-spacing:0}
+    .pf{top:2px;right:2px;gap:1px}
+    .pf i{width:8px;height:12px}
+    .pinbtn{order:2;flex:0 0 auto;padding:6px 11px}
+    .modebar{padding:7px 10px;font-size:12px}
+    .modebar .cur{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+    .modebar .cur::-webkit-scrollbar{display:none}
+    .pinname input{font-size:16px}
     .nolinktag{font-size:8px;padding:1px 3px}
     .jacket .rankbig{font-size:22px;-webkit-text-stroke-width:1px}
     .jacket .rankbig.rk-sssp{font-size:17px}
@@ -324,9 +355,15 @@
         <span class="chip sm" data-m="off" data-on="1">OFF</span>
       </div>
       </div>
+      <button class="btn pinbtn" id="pinBtn" aria-label="目印モード"><span class="bi">📌</span></button>
       <button class="btn" id="filterBtn" aria-label="絞り込み"><span class="bi">⛃</span><span class="bt"> 絞り込み</span></button>
       <button class="btn warn" id="setupBtn" aria-label="設定"><span class="bi">⚙</span><span class="bt"> 設定</span></button>
     </div>
+  </div>
+  <div class="modebar" id="modebar">
+    <span class="mt">📌 目印モード</span><span class="mh2">色を選んでタップで付け外し</span>
+    <button class="btn end" id="pinEnd">終了</button>
+    <div class="cur" id="pinCur"></div>
   </div>
   <div class="status" id="status"></div>
 </header>
@@ -346,6 +383,11 @@
       <button class="close" id="fclose">×</button>
     </div>
     <div class="mb">
+      <h3>目印</h3>
+      <div id="pinBox" class="genre-box"></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="pinClearSel">選択を解除</button></div>
+      <p class="hint">選んだ目印が付いた譜面だけ表示します（何も選ばない＝すべて表示）。</p>
+
       <h3>譜面定数</h3>
       <div class="row range-row">
         <select id="cmin"><option value="">指定なし</option></select>
@@ -438,6 +480,12 @@
       <p class="hint" id="syncState"></p>
       <p id="syncMsg" style="font-size:13px;margin:4px 0 0"></p>
       <p class="hint">トークンはこの端末のブラウザにだけ保存され、GitHub以外には送られません。パスワードと同じく人に見せないでください。</p>
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
+      <h3 style="margin-top:0">目印の名前</h3>
+      <p>ヘッダーの 📌 で目印モードにすると、色を選んでタイルをタップするだけで目印（旗）を付け外しできます。それぞれの色の名前をここで決められます。</p>
+      <div id="pinNames"></div>
+      <p class="hint">名前は自動で保存されます（同期ONなら他の端末にも反映）。空欄にすると色の名前になります。</p>
       <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
 
       <h3 style="margin-top:0">定数表データを読み込み（グリッドが空のとき）</h3>
@@ -599,6 +647,30 @@ let activeDiffs = new Set(["MAS","ULT"]);
 let filterCmin = null, filterCmax = null;   // 定数の最小・最大
 let activeGenres = null;                     // null=全ジャンル / Set=選択中
 let activeVersions = null;                   // null=全バージョン / Set=選択中
+/* ---------- 目印（旗） ---------- */
+const LS_PINS = "chuni_pins_v1";
+const PIN_COLORS = [
+  {k:"r", c:"#ff4d6d", def:"赤"},
+  {k:"y", c:"#ffc83d", def:"黄"},
+  {k:"b", c:"#4da3ff", def:"青"},
+  {k:"g", c:"#3ddc84", def:"緑"}
+];
+let pinsData = {pins:{}, names:{}};    // pins: 譜面キー → "ry" のような色の並び / names: 色 → 名前
+let pinMode = false, pinColor = "r";
+let filterPins = null;                 // null=すべて / Set（r,y,b,g,none）
+function loadPins(){
+  try{ const d=JSON.parse(localStorage.getItem(LS_PINS)||"null");
+       if(d && typeof d==="object") pinsData={pins:(d.pins&&typeof d.pins==="object")?d.pins:{}, names:(d.names&&typeof d.names==="object")?d.names:{}}; }catch(e){}
+}
+function savePins(){ try{ localStorage.setItem(LS_PINS, JSON.stringify(pinsData)); }catch(e){} }
+function pinName(k){ const n=(pinsData.names[k]||"").trim(); return n || PIN_COLORS.find(p=>p.k===k).def; }
+// 譜面ごとのキー（公式の楽曲idx＋難易度。idxが無い時は曲名）
+function pinKey(s){ return (s.idx!=null && s.idx!=="") ? "i:"+s.idx+"_"+s.diff : "t:"+norm(s.title)+"_"+s.diff; }
+function pinsOf(s){ return pinsData.pins[pinKey(s)] || ""; }
+function flagsHtml(p){
+  if(!p) return "";
+  return '<span class="pf">'+PIN_COLORS.filter(x=>p.includes(x.k)).map(x=>'<i style="--c:'+x.c+'"></i>').join("")+'</span>';
+}
 let scoreMode = "off";                        // rank=ランク特大 / score=スコア / off=非表示
 function applyScoreMode(){ const m=document.getElementById("main"); m.classList.remove("m-off","m-rank","m-score"); m.classList.add("m-"+scoreMode); }
 let filterLamps = null;                       // null=全ランプ / Set=選択中(AJC/AJ/FC/none)
@@ -734,6 +806,7 @@ function showDataError(extra){
 async function init(){
   sdvxMap = loadMap();
   loadScores();
+  loadPins(); buildPinNames(); buildPinCur();
   await handleImportHash();   // ブックマークレットから開かれた場合は、受け取ったデータを取り込む
   // 1) まずキャッシュがあれば即表示
   let hadCache=false;
@@ -805,6 +878,10 @@ function render(){
     if(filterCmax!=null && s.const > filterCmax) continue;
     if(activeGenres && !activeGenres.has(s.genre)) continue;
     if(activeVersions && !activeVersions.has(s.version==null?"":s.version)) continue;
+    if(filterPins){
+      const p=pinsOf(s);
+      if(!(p ? [...p].some(c=>filterPins.has(c)) : filterPins.has("none"))) continue;
+    }
     // スコア絞り込み（ランク区分・数値範囲）
     if(filterLamps || filterRanks || filterScoreMin!=null || filterScoreMax!=null){
       const sc=scoreOf(s);
@@ -896,11 +973,13 @@ function tileHtml(s, hasMap){
     dimClass = ' sc'+(sc.rank?' rk':'');
   }
   const img = escapeAttr(String(s.img||""));
-  return '<button class="tile '+cls+(hasMap && !linked?' nolink':'')+'" '+dataAttr+' title="'+escapeAttr(s.title)+' ['+d+']'+(sc?' '+(sc.rank||'')+' '+Number(sc.score).toLocaleString():'')+'">'
+  const pk = escapeAttr(pinKey(s));
+  return '<button class="tile '+cls+(hasMap && !linked?' nolink':'')+'" '+dataAttr+' data-pk="'+pk+'" title="'+escapeAttr(s.title)+' ['+d+']'+(sc?' '+(sc.rank||'')+' '+Number(sc.score).toLocaleString():'')+'">'
     + '<div class="jacket'+dimClass+'" data-name="'+escapeAttr(s.title)+'">'
       + '<img src="'+jacketCands(img)[0]+'" data-img="'+img+'" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="">'
       + '<span class="badge '+cls+'">'+d+'</span>'
       + '<span class="cst">'+s.const.toFixed(1)+'</span>'
+      + flagsHtml(pinsData.pins[pinKey(s)]||"")
       + lamp
       + overlay
       + (hasMap && !linked ? '<span class="nolinktag">sdvx未マッチ</span>' : '')
@@ -913,6 +992,7 @@ function tileHtml(s, hasMap){
   const main = document.getElementById("main");
   main.addEventListener("click", e=>{
     const t = e.target.closest(".tile"); if(!t || !main.contains(t)) return;
+    if(pinMode){ togglePin(t); return; }     // 目印モード中は sdvx.in を開かずに目印を付け外し
     const stem = t.getAttribute("data-stem");
     const url = stem ? sdvxUrl(stem) : "https://sdvx.in/chunithm.html";
     window.open(url, "_blank", "noopener");
@@ -949,7 +1029,7 @@ document.getElementById("scoreModeBox").addEventListener("click",e=>{
 const GENRE_ORDER = ["POPS&ANIME","niconico","東方Project","VARIETY","イロドリミドリ","ゲキマイ","ORIGINAL"];
 function filterActive(){
   return filterCmin!=null || filterCmax!=null || activeGenres!==null || activeVersions!==null
-    || filterLamps!==null || filterRanks!==null || filterScoreMin!=null || filterScoreMax!=null;
+    || filterLamps!==null || filterRanks!==null || filterScoreMin!=null || filterScoreMax!=null || filterPins!==null;
 }
 function allGenres(){
   const set = new Set(songs.map(s=>s.genre).filter(Boolean));
@@ -994,6 +1074,7 @@ function buildConstOptions(){
 }
 const fscrim=document.getElementById("fscrim");
 document.getElementById("filterBtn").onclick=()=>{
+  buildPinChips();
   buildConstOptions();
   buildGenreChips();
   buildVerChips();
@@ -1054,12 +1135,15 @@ document.getElementById("fapply").onclick=()=>{
   let slo=isNaN(smin)?null:smin, shi=isNaN(smax)?null:smax;
   if(slo!=null&&shi!=null&&slo>shi){const t=slo;slo=shi;shi=t;}
   filterScoreMin=slo; filterScoreMax=shi;
+  const pon=[...document.querySelectorAll("#pinBox .gchip")].filter(c=>c.dataset.on==="1").map(c=>c.dataset.p);
+  filterPins = pon.length ? new Set(pon) : null;
   fscrim.dataset.open="0";
   render();
 };
 document.getElementById("freset").onclick=()=>{
   filterCmin=null; filterCmax=null; activeGenres=null; activeVersions=null;
-  filterLamps=null; filterRanks=null; filterScoreMin=null; filterScoreMax=null;
+  filterLamps=null; filterRanks=null; filterScoreMin=null; filterScoreMax=null; filterPins=null;
+  buildPinChips();
   document.getElementById("cmin").value="";
   document.getElementById("cmax").value="";
   document.getElementById("smin").value="";
@@ -1177,8 +1261,64 @@ function debounce(fn,ms){let h;return(...a)=>{clearTimeout(h);h=setTimeout(()=>f
    - 起動時・アプリに戻った時: Gistの方が新しいデータを取り込む */
 const SYNC_TOKEN="chuni_sync_token_v1", SYNC_GIST="chuni_sync_gist_v1", SYNC_META="chuni_sync_meta_v1";
 const SYNC_DESC="chunithm-sdvx-linker sync (自動生成・削除しないでください)";
-const SYNC_FILES={map:"sdvx-map.json", scores:"scores.json", const:"const-data.json"};
-const SYNC_LABEL={map:"対応表", scores:"スコア", const:"定数表データ"};
+function buildPinChips(){
+  const box=document.getElementById("pinBox");
+  box.innerHTML = PIN_COLORS.map(p=>'<span class="gchip pinchip" data-p="'+p.k+'" data-on="'+(filterPins&&filterPins.has(p.k)?"1":"0")+'"><i style="--c:'+p.c+'"></i>'+escapeHtml(pinName(p.k))+'</span>').join("")
+    + '<span class="gchip" data-p="none" data-on="'+(filterPins&&filterPins.has("none")?"1":"0")+'">目印なし</span>';
+}
+document.getElementById("pinBox").addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c) return;
+  c.dataset.on = c.dataset.on==="1" ? "0" : "1";
+});
+document.getElementById("pinClearSel").onclick=()=>{ document.querySelectorAll("#pinBox .gchip").forEach(c=>c.dataset.on="0"); };
+function buildPinCur(){
+  document.getElementById("pinCur").innerHTML = PIN_COLORS.map(p=>
+    '<span data-p="'+p.k+'" class="'+(p.k===pinColor?"on":"")+'" style="--c:'+p.c+'"><i></i>'+escapeHtml(pinName(p.k))+'</span>').join("");
+}
+function buildPinNames(){
+  document.getElementById("pinNames").innerHTML = PIN_COLORS.map(p=>
+    '<label class="pinname"><i style="--c:'+p.c+'"></i><input type="text" maxlength="20" data-p="'+p.k+'" placeholder="'+p.def+'" value="'+escapeAttr(pinsData.names[p.k]||"")+'"></label>').join("");
+}
+function refreshPinLabels(){ buildPinCur(); if(document.getElementById("fscrim").dataset.open==="1") buildPinChips(); }
+// 4つの欄をまとめて読み直して保存（続けて複数の欄を書き換えても取りこぼさない）
+function savePinNames(){
+  let changed=false;
+  document.querySelectorAll("#pinNames input[data-p]").forEach(inp=>{
+    const k=inp.dataset.p, v=inp.value.trim().slice(0,20), old=pinsData.names[k]||"";
+    if(v!==old){ changed=true; if(v) pinsData.names[k]=v; else delete pinsData.names[k]; }
+  });
+  if(changed){ savePins(); markChanged("pins"); refreshPinLabels(); }
+}
+document.getElementById("pinNames").addEventListener("input", debounce(savePinNames, 400));
+document.getElementById("pinNames").addEventListener("change", savePinNames);
+function setPinMode(on){
+  pinMode=on;
+  document.querySelector("header").classList.toggle("pinmode",on);
+  document.getElementById("main").classList.toggle("pinmode",on);
+  document.getElementById("pinBtn").classList.toggle("on",on);
+  if(on){ buildPinCur(); document.querySelector("header").classList.remove("hide"); }
+}
+document.getElementById("pinBtn").onclick=()=>setPinMode(!pinMode);
+document.getElementById("pinEnd").onclick=()=>setPinMode(false);
+document.getElementById("pinCur").addEventListener("click",e=>{
+  const c=e.target.closest("span[data-p]"); if(!c) return;
+  pinColor=c.dataset.p; buildPinCur();
+});
+// タイルの目印を付け外し（一覧は描き直さず、そのタイルの旗だけ差し替える）
+function togglePin(t){
+  const key=t.getAttribute("data-pk"); if(!key) return;
+  let p=pinsData.pins[key]||"";
+  p = p.includes(pinColor) ? p.replace(pinColor,"") : p+pinColor;
+  p = PIN_COLORS.map(x=>x.k).filter(k=>p.includes(k)).join("");
+  if(p) pinsData.pins[key]=p; else delete pinsData.pins[key];
+  savePins(); markChanged("pins");
+  const jk=t.querySelector(".jacket"); const old=jk.querySelector(".pf"); if(old) old.remove();
+  if(p) jk.insertAdjacentHTML("beforeend", flagsHtml(p));
+  t.classList.add("pinflash"); setTimeout(()=>t.classList.remove("pinflash"),180);
+}
+
+const SYNC_FILES={map:"sdvx-map.json", scores:"scores.json", const:"const-data.json", pins:"pins.json"};
+const SYNC_LABEL={map:"対応表", scores:"スコア", const:"定数表データ", pins:"目印"};
 let syncBusy=false, syncTimer=null, lastPullAt=0;
 const pendingKinds=new Set();
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -1241,6 +1381,7 @@ async function readGistFile(g,name){
 function localData(kind){
   if(kind==="map") return Object.keys(sdvxRaw).length ? sdvxRaw : null;
   if(kind==="scores") return Object.keys(scores).length ? scores : null;
+  if(kind==="pins") return (Object.keys(pinsData.pins).length || Object.keys(pinsData.names).length || (syncMeta().pinsAt||0)) ? pinsData : null;
   try{ return JSON.parse(lsGet(LS_DATA)||"null"); }catch(e){ return null; }
 }
 // データを手動で読み込んだ時に呼ぶ
@@ -1274,7 +1415,7 @@ async function syncPush(kinds){
     }
     m.lastSync=Date.now(); setSyncMeta(m);
     const txt="☁ クラウドに保存しました（"+done.map(k=>SYNC_LABEL[k]).join("・")+"）";
-    refreshSyncStatus('<span class="ok">'+txt+'</span>'); if(done.length) toast(txt);
+    refreshSyncStatus('<span class="ok">'+txt+'</span>'); if(done.some(k=>k!=="pins")) toast(txt);   // 目印だけの保存はトーストを出さない
   }catch(e){
     kinds.forEach(k=>pendingKinds.add(k));   // 次回の同期で再送
     refreshSyncStatus('<span class="bad">保存に失敗：'+escapeHtml(e.message)+'</span>'); toast("☁ 保存に失敗："+e.message,true);
@@ -1291,7 +1432,7 @@ async function syncPull(opts){
     const g=await findGist(false);
     const rm=g ? ((await readGistFile(g,"meta.json"))||{}) : {};
     const m=syncMeta();
-    for(const k of ["map","scores","const"]){
+    for(const k of ["map","scores","const","pins"]){
       const remoteAt=rm[k+"At"]||0;
       const localAt=m[k+"At"]||0;
       const guardAt=k==="const" ? Math.max(localAt, m.constFetchedAt||0) : localAt;  // 自動取得した最新の定数表は上書きしない
@@ -1300,6 +1441,7 @@ async function syncPull(opts){
         if(data==null) continue;
         if(k==="map"){ sdvxRaw=data; persistMap(sdvxRaw); sdvxMap=rekeyMap(sdvxRaw); }
         else if(k==="scores"){ saveScores(data); }
+        else if(k==="pins"){ pinsData={pins:data.pins||{}, names:data.names||{}}; savePins(); buildPinNames(); buildPinCur(); }
         else { applyConstData(data,true); }
         m[k+"At"]=remoteAt; applied.push(k);
       }else if(localAt>remoteAt && localData(k)!=null){
