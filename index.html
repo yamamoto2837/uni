@@ -217,6 +217,12 @@
     padding:12px;color:var(--text);font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .ok{color:var(--cyan)} .bad{color:var(--pink)}
+  .maprep{font-size:13px;margin-top:10px;line-height:1.6}
+  .maprep h4{margin:14px 0 6px;font-size:13px;color:#fff}
+  .maprep .it{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;background:#0d1020}
+  .maprep .it a{word-break:break-all}
+  .maprep .sel{color:var(--cyan);font-weight:700}
+  .maprep .warn{color:#ffc83d}
   .close{cursor:pointer;background:none;border:none;color:var(--muted);font-size:22px;line-height:1}
   .hint{font-size:12px;color:var(--muted);margin-top:6px}
   a.bmlet{display:inline-block;cursor:grab;text-decoration:none;font-weight:700;font-size:14px;
@@ -526,6 +532,12 @@
 
       <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
 
+      <h3 style="margin-top:0">対応表のチェック</h3>
+      <p>大文字小文字や記号だけが違う同名の別曲（例：<b>FLOWER</b> と <b>Flower</b>）や、曲名の表記が完全には一致していない譜面を一覧にします。リンク先が正しいかの確認に使ってください。</p>
+      <div class="row"><button class="btn" id="mapCheck">チェックする</button></div>
+      <div id="mapReport" class="maprep"></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+
       <h3 style="margin-top:0">対応表の更新（2通り）</h3>
       <p>ゲームのアップデートで曲が増えたら、対応表を作り直します。<b>方法①ブックマークレット（ワンクリック・おすすめ）</b>か、<b>方法②コンソールにスクリプトを貼る（従来）</b>のどちらでもOKです。</p>
 
@@ -537,8 +549,8 @@
         <li><b>初回は「全件取得」</b>、<b>アップデートで曲が増えたら「差分更新」</b>を使う</li>
         <li>登録したブックマークをクリック → 右上に進捗、完了すると<b>自動でこのリンカーが開いて読み込まれます</b>（差分更新ぶんは既存に追記）</li>
       </ol>
-      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22%E3%81%93%E3%81%AE%E3%83%96%E3%83%83%E3%82%AF%E3%83%9E%E3%83%BC%E3%82%AF%E3%83%AC%E3%83%83%E3%83%88%E3%81%AF%20sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20LINKER=%22__LINKER__%22;%20const%20b64u=bytes=%3E%7Blet%20bin=%22%22;for(let%20i=0;i%3Cbytes.length;i+=32768)%7Bbin+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));%7Dreturn%20btoa(bin).replace(/%5C+/g,%22-%22).replace(/%5C//g,%22_%22).replace(/=+$/,%22%22);%7D;%20const%20deliver=async(payload,fileObj,fname,say,info)=%3E%7B%20%20%20if(LINKER)%7B%20%20%20%20%20try%7B%20%20%20%20%20%20%20const%20raw=new%20TextEncoder().encode(JSON.stringify(payload));%20%20%20%20%20%20%20let%20tag=%22j%22,bytes=raw;%20%20%20%20%20%20%20try%7Bif(typeof%20CompressionStream===%22function%22)%7Bconst%20st=new%20Blob(%5Braw%5D).stream().pipeThrough(new%20CompressionStream(%22deflate-raw%22));bytes=new%20Uint8Array(await%20new%20Response(st).arrayBuffer());tag=%22z%22;%7D%7Dcatch(e)%7Bbytes=raw;tag=%22j%22;%7D%20%20%20%20%20%20%20say(info+%22%3Cbr%3E%E2%9C%85%20%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%82%92%E9%96%8B%E3%81%84%E3%81%A6%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%BE%E3%81%99%E2%80%A6%22);%20%20%20%20%20%20%20location.href=LINKER+%22#import=%22+tag+b64u(bytes);%20%20%20%20%20%20%20return;%20%20%20%20%20%7Dcatch(e)%7B%7D%20%20%20%7D%20%20%20const%20s=JSON.stringify(fileObj);const%20a=document.createElement(%22a%22);%20%20%20try%7Ba.href=window.URL.createObjectURL(new%20Blob(%5Bs%5D,%7Btype:%22application/json%22%7D));%7Dcatch(e)%7Ba.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(s);%7D%20%20%20a.download=fname;document.body.appendChild(a);a.click();a.remove();%20%20%20say(info+%22%3Cbr%3E%22+fname+%22%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E2%9A%99%E8%A8%AD%E5%AE%9A%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);%20%7D;%20%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20sleep=ms=%3Enew%20Promise(r=%3EsetTimeout(r,ms));%20const%20TO=15000;%20let%20retries=0;%20const%20get1=async%20u=%3E%7Blet%20ac=null;try%7Bac=new%20AbortController();%7Dcatch(e)%7B%7D%20const%20tm=setTimeout(()=%3E%7Btry%7Bif(ac)ac.abort();%7Dcatch(e)%7B%7D%7D,TO);%20const%20late=new%20Promise((_,rej)=%3EsetTimeout(()=%3Erej(new%20Error(%22timeout%22)),TO+1000));%20late.catch(()=%3E%7B%7D);%20try%7Bconst%20r=await%20Promise.race(%5Bfetch(u,ac?%7Bcache:%22no-store%22,signal:ac.signal%7D:%7Bcache:%22no-store%22%7D),late%5D);%20if(!r.ok)%7Bconst%20e=new%20Error(%22HTTP%20%22+r.status);e.st=r.status;throw%20e;%7D%20const%20b=await%20Promise.race(%5Br.arrayBuffer(),late%5D);%20let%20t=new%20TextDecoder(%22utf-8%22).decode(b);%20if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);%20return%20t;%7Dfinally%7BclearTimeout(tm);%7D%7D;%20const%20get=async%20u=%3E%7Blet%20last;for(let%20k=0;k%3C4;k++)%7Btry%7Breturn%20await%20get1(u);%7Dcatch(e)%7Blast=e;if(e&&e.st===404)break;retries++;await%20sleep(e&&(e.st===429%7C%7Ce.st===503)?5000*(k+1):1500*(k+1));%7D%7Dthrow%20last;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:320px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20songs=new%20Map();%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Bsongs.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20const%20entries=%5B...songs.entries()%5D;%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id,k=norm(title);if(!map%5Bk%5D)map%5Bk%5D=%7Bt:title%7D;map%5Bk%5D.EXP=s+%22exp%22;map%5Bk%5D.MAS=s+%22mst%22;%7Dreturn%20true;%7Dcatch(e)%7Breturn%20false;%7D%7D;%20const%20CONC=4;%20let%20qi=0;%20const%20failed=%5B%5D;%20const%20prog=()=%3Esay(%22%E6%AD%A3%E5%BC%8F%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+entries.length+(retries?%22%3Cbr%3E%3Csmall%3E%E9%80%9A%E4%BF%A1%E3%81%8C%E6%B7%B7%E3%82%93%E3%81%A7%E3%81%84%E3%82%8B%E3%81%9F%E3%82%81%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%EF%BC%88%22+retries+%22%20%E5%9B%9E%EF%BC%89%3C/small%3E%22:%22%22)+(failed.length?%22%3Cbr%3E%3Csmall%3E%E3%81%84%E3%81%A3%E3%81%9F%E3%82%93%E5%A4%B1%E6%95%97%EF%BC%9A%22+failed.length+%22%20%E6%9B%B2%EF%BC%88%E6%9C%80%E5%BE%8C%E3%81%AB%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E8%A9%A6%E3%81%97%E3%81%BE%E3%81%99%EF%BC%89%3C/small%3E%22:%22%22));%20const%20worker=async()=%3E%7Bwhile(qi%3Centries.length)%7Bconst%20p=entries%5Bqi++%5D;if(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);done++;prog();await%20sleep(50);%7D%7D;%20prog();%20await%20Promise.all(Array.from(%7Blength:CONC%7D,worker));%20if(failed.length)%7Bconst%20again=failed.splice(0);say(%22%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F%20%22+again.length+%22%20%E6%9B%B2%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%E2%80%A6%22);await%20sleep(3000);for(const%20p%20of%20again)%7Bif(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);%7D%7D%20fail=failed.length;%20const%20rows=Object.values(map).map(x=%3E%7Bconst%20m=String(x.MAS%7C%7Cx.EXP).match(/%5E(%5Cd%7B2%7D)%5C/(%5Cd+)/);return%20m?%5Bx.t,m%5B1%5D,m%5B2%5D%5D:null;%7D).filter(Boolean);%20const%20info=%22%E2%9C%85%20%E5%8F%96%E5%BE%97%E5%AE%8C%E4%BA%86%EF%BC%9A%22+rows.length+%22%20%E6%9B%B2%22+(fail?%22%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22);%20await%20deliver(%7Bv:1,kind:%22map%22,mode:%22full%22,at:Date.now(),rows%7D,map,%22chunithm-sdvx-map.json%22,say,info);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">⚡ 全件取得（初回・作り直し）</a> ← ブックマークバーへドラッグ</p>
-      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20LINKER=%22__LINKER__%22;%20const%20b64u=bytes=%3E%7Blet%20bin=%22%22;for(let%20i=0;i%3Cbytes.length;i+=32768)%7Bbin+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));%7Dreturn%20btoa(bin).replace(/%5C+/g,%22-%22).replace(/%5C//g,%22_%22).replace(/=+$/,%22%22);%7D;%20const%20deliver=async(payload,fileObj,fname,say,info)=%3E%7B%20%20%20if(LINKER)%7B%20%20%20%20%20try%7B%20%20%20%20%20%20%20const%20raw=new%20TextEncoder().encode(JSON.stringify(payload));%20%20%20%20%20%20%20let%20tag=%22j%22,bytes=raw;%20%20%20%20%20%20%20try%7Bif(typeof%20CompressionStream===%22function%22)%7Bconst%20st=new%20Blob(%5Braw%5D).stream().pipeThrough(new%20CompressionStream(%22deflate-raw%22));bytes=new%20Uint8Array(await%20new%20Response(st).arrayBuffer());tag=%22z%22;%7D%7Dcatch(e)%7Bbytes=raw;tag=%22j%22;%7D%20%20%20%20%20%20%20say(info+%22%3Cbr%3E%E2%9C%85%20%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%82%92%E9%96%8B%E3%81%84%E3%81%A6%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%BE%E3%81%99%E2%80%A6%22);%20%20%20%20%20%20%20location.href=LINKER+%22#import=%22+tag+b64u(bytes);%20%20%20%20%20%20%20return;%20%20%20%20%20%7Dcatch(e)%7B%7D%20%20%20%7D%20%20%20const%20s=JSON.stringify(fileObj);const%20a=document.createElement(%22a%22);%20%20%20try%7Ba.href=window.URL.createObjectURL(new%20Blob(%5Bs%5D,%7Btype:%22application/json%22%7D));%7Dcatch(e)%7Ba.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(s);%7D%20%20%20a.download=fname;document.body.appendChild(a);a.click();a.remove();%20%20%20say(info+%22%3Cbr%3E%22+fname+%22%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E2%9A%99%E8%A8%AD%E5%AE%9A%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);%20%7D;%20%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20sleep=ms=%3Enew%20Promise(r=%3EsetTimeout(r,ms));%20const%20TO=15000;%20let%20retries=0;%20const%20get1=async%20u=%3E%7Blet%20ac=null;try%7Bac=new%20AbortController();%7Dcatch(e)%7B%7D%20const%20tm=setTimeout(()=%3E%7Btry%7Bif(ac)ac.abort();%7Dcatch(e)%7B%7D%7D,TO);%20const%20late=new%20Promise((_,rej)=%3EsetTimeout(()=%3Erej(new%20Error(%22timeout%22)),TO+1000));%20late.catch(()=%3E%7B%7D);%20try%7Bconst%20r=await%20Promise.race(%5Bfetch(u,ac?%7Bcache:%22no-store%22,signal:ac.signal%7D:%7Bcache:%22no-store%22%7D),late%5D);%20if(!r.ok)%7Bconst%20e=new%20Error(%22HTTP%20%22+r.status);e.st=r.status;throw%20e;%7D%20const%20b=await%20Promise.race(%5Br.arrayBuffer(),late%5D);%20let%20t=new%20TextDecoder(%22utf-8%22).decode(b);%20if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);%20return%20t;%7Dfinally%7BclearTimeout(tm);%7D%7D;%20const%20get=async%20u=%3E%7Blet%20last;for(let%20k=0;k%3C4;k++)%7Btry%7Breturn%20await%20get1(u);%7Dcatch(e)%7Blast=e;if(e&&e.st===404)break;retries++;await%20sleep(e&&(e.st===429%7C%7Ce.st===503)?5000*(k+1):1500*(k+1));%7D%7Dthrow%20last;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:340px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%EF%BC%88%E5%B7%AE%E5%88%86%E6%9B%B4%E6%96%B0%EF%BC%89%22);%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20all=new%20Map();%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Ball.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20if(!all.size)%7Bsay(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%22);return;%7D%20let%20maxV=0;for(const%20f%20of%20all.values())%7Bconst%20v=parseInt(f,10);if(v%3EmaxV)maxV=v;%7D%20const%20lo=maxV-1;%20const%20targets=%5B...all.entries()%5D.filter((%5Bid,f%5D)=%3EparseInt(f,10)%3E=lo);%20say(%22%E6%9C%80%E6%96%B02%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3(v%22+lo+%22%E3%80%9Cv%22+maxV+%22)%E3%81%AE%20%22+targets.length+%22%20%E6%9B%B2%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id,k=norm(title);if(!map%5Bk%5D)map%5Bk%5D=%7Bt:title%7D;map%5Bk%5D.EXP=s+%22exp%22;map%5Bk%5D.MAS=s+%22mst%22;%7Dreturn%20true;%7Dcatch(e)%7Breturn%20false;%7D%7D;%20const%20CONC=4;%20let%20qi=0;%20const%20failed=%5B%5D;%20const%20prog=()=%3Esay(%22%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+targets.length+(retries?%22%3Cbr%3E%3Csmall%3E%E9%80%9A%E4%BF%A1%E3%81%8C%E6%B7%B7%E3%82%93%E3%81%A7%E3%81%84%E3%82%8B%E3%81%9F%E3%82%81%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%EF%BC%88%22+retries+%22%20%E5%9B%9E%EF%BC%89%3C/small%3E%22:%22%22)+(failed.length?%22%3Cbr%3E%3Csmall%3E%E3%81%84%E3%81%A3%E3%81%9F%E3%82%93%E5%A4%B1%E6%95%97%EF%BC%9A%22+failed.length+%22%20%E6%9B%B2%EF%BC%88%E6%9C%80%E5%BE%8C%E3%81%AB%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E8%A9%A6%E3%81%97%E3%81%BE%E3%81%99%EF%BC%89%3C/small%3E%22:%22%22));%20const%20worker=async()=%3E%7Bwhile(qi%3Ctargets.length)%7Bconst%20p=targets%5Bqi++%5D;if(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);done++;prog();await%20sleep(50);%7D%7D;%20prog();%20await%20Promise.all(Array.from(%7Blength:CONC%7D,worker));%20if(failed.length)%7Bconst%20again=failed.splice(0);say(%22%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F%20%22+again.length+%22%20%E6%9B%B2%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%E2%80%A6%22);await%20sleep(3000);for(const%20p%20of%20again)%7Bif(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);%7D%7D%20fail=failed.length;%20const%20rows=Object.values(map).map(x=%3E%7Bconst%20m=String(x.MAS%7C%7Cx.EXP).match(/%5E(%5Cd%7B2%7D)%5C/(%5Cd+)/);return%20m?%5Bx.t,m%5B1%5D,m%5B2%5D%5D:null;%7D).filter(Boolean);%20const%20info=%22%E2%9C%85%20%E5%8F%96%E5%BE%97%E5%AE%8C%E4%BA%86%EF%BC%9A%22+rows.length+%22%20%E6%9B%B2%22+(fail?%22%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22);%20await%20deliver(%7Bv:1,kind:%22map%22,mode:%22diff%22,at:Date.now(),rows%7D,map,%22chunithm-sdvx-map-diff.json%22,say,info);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">🔄 差分更新（最新2バージョンだけ・速い）</a> ← ブックマークバーへドラッグ</p>
+      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22%E3%81%93%E3%81%AE%E3%83%96%E3%83%83%E3%82%AF%E3%83%9E%E3%83%BC%E3%82%AF%E3%83%AC%E3%83%83%E3%83%88%E3%81%AF%20sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20LINKER=%22__LINKER__%22;%20const%20b64u=bytes=%3E%7Blet%20bin=%22%22;for(let%20i=0;i%3Cbytes.length;i+=32768)%7Bbin+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));%7Dreturn%20btoa(bin).replace(/%5C+/g,%22-%22).replace(/%5C//g,%22_%22).replace(/=+$/,%22%22);%7D;%20const%20deliver=async(payload,fileObj,fname,say,info)=%3E%7B%20%20%20if(LINKER)%7B%20%20%20%20%20try%7B%20%20%20%20%20%20%20const%20raw=new%20TextEncoder().encode(JSON.stringify(payload));%20%20%20%20%20%20%20let%20tag=%22j%22,bytes=raw;%20%20%20%20%20%20%20try%7Bif(typeof%20CompressionStream===%22function%22)%7Bconst%20st=new%20Blob(%5Braw%5D).stream().pipeThrough(new%20CompressionStream(%22deflate-raw%22));bytes=new%20Uint8Array(await%20new%20Response(st).arrayBuffer());tag=%22z%22;%7D%7Dcatch(e)%7Bbytes=raw;tag=%22j%22;%7D%20%20%20%20%20%20%20say(info+%22%3Cbr%3E%E2%9C%85%20%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%82%92%E9%96%8B%E3%81%84%E3%81%A6%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%BE%E3%81%99%E2%80%A6%22);%20%20%20%20%20%20%20location.href=LINKER+%22#import=%22+tag+b64u(bytes);%20%20%20%20%20%20%20return;%20%20%20%20%20%7Dcatch(e)%7B%7D%20%20%20%7D%20%20%20const%20s=JSON.stringify(fileObj);const%20a=document.createElement(%22a%22);%20%20%20try%7Ba.href=window.URL.createObjectURL(new%20Blob(%5Bs%5D,%7Btype:%22application/json%22%7D));%7Dcatch(e)%7Ba.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(s);%7D%20%20%20a.download=fname;document.body.appendChild(a);a.click();a.remove();%20%20%20say(info+%22%3Cbr%3E%22+fname+%22%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E2%9A%99%E8%A8%AD%E5%AE%9A%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);%20%7D;%20%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20sleep=ms=%3Enew%20Promise(r=%3EsetTimeout(r,ms));%20const%20TO=15000;%20let%20retries=0;%20const%20get1=async%20u=%3E%7Blet%20ac=null;try%7Bac=new%20AbortController();%7Dcatch(e)%7B%7D%20const%20tm=setTimeout(()=%3E%7Btry%7Bif(ac)ac.abort();%7Dcatch(e)%7B%7D%7D,TO);%20const%20late=new%20Promise((_,rej)=%3EsetTimeout(()=%3Erej(new%20Error(%22timeout%22)),TO+1000));%20late.catch(()=%3E%7B%7D);%20try%7Bconst%20r=await%20Promise.race(%5Bfetch(u,ac?%7Bcache:%22no-store%22,signal:ac.signal%7D:%7Bcache:%22no-store%22%7D),late%5D);%20if(!r.ok)%7Bconst%20e=new%20Error(%22HTTP%20%22+r.status);e.st=r.status;throw%20e;%7D%20const%20b=await%20Promise.race(%5Br.arrayBuffer(),late%5D);%20let%20t=new%20TextDecoder(%22utf-8%22).decode(b);%20if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);%20return%20t;%7Dfinally%7BclearTimeout(tm);%7D%7D;%20const%20get=async%20u=%3E%7Blet%20last;for(let%20k=0;k%3C4;k++)%7Btry%7Breturn%20await%20get1(u);%7Dcatch(e)%7Blast=e;if(e&&e.st===404)break;retries++;await%20sleep(e&&(e.st===429%7C%7Ce.st===503)?5000*(k+1):1500*(k+1));%7D%7Dthrow%20last;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:320px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20songs=new%20Map();%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Bsongs.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20const%20entries=%5B...songs.entries()%5D;%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id;map%5B%22id:%22+s%5D=%7Bt:title,EXP:s+%22exp%22,MAS:s+%22mst%22%7D;%7Dreturn%20true;%7Dcatch(e)%7Breturn%20false;%7D%7D;%20const%20CONC=4;%20let%20qi=0;%20const%20failed=%5B%5D;%20const%20prog=()=%3Esay(%22%E6%AD%A3%E5%BC%8F%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+entries.length+(retries?%22%3Cbr%3E%3Csmall%3E%E9%80%9A%E4%BF%A1%E3%81%8C%E6%B7%B7%E3%82%93%E3%81%A7%E3%81%84%E3%82%8B%E3%81%9F%E3%82%81%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%EF%BC%88%22+retries+%22%20%E5%9B%9E%EF%BC%89%3C/small%3E%22:%22%22)+(failed.length?%22%3Cbr%3E%3Csmall%3E%E3%81%84%E3%81%A3%E3%81%9F%E3%82%93%E5%A4%B1%E6%95%97%EF%BC%9A%22+failed.length+%22%20%E6%9B%B2%EF%BC%88%E6%9C%80%E5%BE%8C%E3%81%AB%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E8%A9%A6%E3%81%97%E3%81%BE%E3%81%99%EF%BC%89%3C/small%3E%22:%22%22));%20const%20worker=async()=%3E%7Bwhile(qi%3Centries.length)%7Bconst%20p=entries%5Bqi++%5D;if(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);done++;prog();await%20sleep(50);%7D%7D;%20prog();%20await%20Promise.all(Array.from(%7Blength:CONC%7D,worker));%20if(failed.length)%7Bconst%20again=failed.splice(0);say(%22%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F%20%22+again.length+%22%20%E6%9B%B2%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%E2%80%A6%22);await%20sleep(3000);for(const%20p%20of%20again)%7Bif(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);%7D%7D%20fail=failed.length;%20const%20rows=Object.values(map).map(x=%3E%7Bconst%20m=String(x.MAS%7C%7Cx.EXP).match(/%5E(%5Cd%7B2%7D)%5C/(%5Cd+)/);return%20m?%5Bx.t,m%5B1%5D,m%5B2%5D%5D:null;%7D).filter(Boolean);%20const%20info=%22%E2%9C%85%20%E5%8F%96%E5%BE%97%E5%AE%8C%E4%BA%86%EF%BC%9A%22+rows.length+%22%20%E6%9B%B2%22+(fail?%22%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22);%20await%20deliver(%7Bv:1,kind:%22map%22,mode:%22full%22,at:Date.now(),rows%7D,map,%22chunithm-sdvx-map.json%22,say,info);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">⚡ 全件取得（初回・作り直し）</a> ← ブックマークバーへドラッグ</p>
+      <p><a class="bmlet" href="javascript:(async()=%3E%7B%20if(!location.hostname.endsWith(%22sdvx.in%22))%7Balert(%22sdvx.in%20%E3%81%AE%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);return;%7D%20const%20norm=s=%3E(s%7C%7C%22%22).normalize(%22NFKC%22).replace(/%5Cs+/g,%22%22).toLowerCase();%20const%20LINKER=%22__LINKER__%22;%20const%20b64u=bytes=%3E%7Blet%20bin=%22%22;for(let%20i=0;i%3Cbytes.length;i+=32768)%7Bbin+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));%7Dreturn%20btoa(bin).replace(/%5C+/g,%22-%22).replace(/%5C//g,%22_%22).replace(/=+$/,%22%22);%7D;%20const%20deliver=async(payload,fileObj,fname,say,info)=%3E%7B%20%20%20if(LINKER)%7B%20%20%20%20%20try%7B%20%20%20%20%20%20%20const%20raw=new%20TextEncoder().encode(JSON.stringify(payload));%20%20%20%20%20%20%20let%20tag=%22j%22,bytes=raw;%20%20%20%20%20%20%20try%7Bif(typeof%20CompressionStream===%22function%22)%7Bconst%20st=new%20Blob(%5Braw%5D).stream().pipeThrough(new%20CompressionStream(%22deflate-raw%22));bytes=new%20Uint8Array(await%20new%20Response(st).arrayBuffer());tag=%22z%22;%7D%7Dcatch(e)%7Bbytes=raw;tag=%22j%22;%7D%20%20%20%20%20%20%20say(info+%22%3Cbr%3E%E2%9C%85%20%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%82%92%E9%96%8B%E3%81%84%E3%81%A6%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%E3%81%BE%E3%81%99%E2%80%A6%22);%20%20%20%20%20%20%20location.href=LINKER+%22#import=%22+tag+b64u(bytes);%20%20%20%20%20%20%20return;%20%20%20%20%20%7Dcatch(e)%7B%7D%20%20%20%7D%20%20%20const%20s=JSON.stringify(fileObj);const%20a=document.createElement(%22a%22);%20%20%20try%7Ba.href=window.URL.createObjectURL(new%20Blob(%5Bs%5D,%7Btype:%22application/json%22%7D));%7Dcatch(e)%7Ba.href=%22data:application/json;charset=utf-8,%22+encodeURIComponent(s);%7D%20%20%20a.download=fname;document.body.appendChild(a);a.click();a.remove();%20%20%20say(info+%22%3Cbr%3E%22+fname+%22%20%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F%E3%80%82%3Cbr%3E%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E2%9A%99%E8%A8%AD%E5%AE%9A%E3%81%8B%E3%82%89%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%93%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82%22);%20%7D;%20%20const%20tmp=document.createElement(%22div%22);%20const%20clean=h=%3E%7Btmp.innerHTML=h;return%20(tmp.textContent%7C%7C%22%22).replace(/%5B%5Cu0000-%5Cu001f%5D/g,%22%20%22).trim();%7D;%20const%20sleep=ms=%3Enew%20Promise(r=%3EsetTimeout(r,ms));%20const%20TO=15000;%20let%20retries=0;%20const%20get1=async%20u=%3E%7Blet%20ac=null;try%7Bac=new%20AbortController();%7Dcatch(e)%7B%7D%20const%20tm=setTimeout(()=%3E%7Btry%7Bif(ac)ac.abort();%7Dcatch(e)%7B%7D%7D,TO);%20const%20late=new%20Promise((_,rej)=%3EsetTimeout(()=%3Erej(new%20Error(%22timeout%22)),TO+1000));%20late.catch(()=%3E%7B%7D);%20try%7Bconst%20r=await%20Promise.race(%5Bfetch(u,ac?%7Bcache:%22no-store%22,signal:ac.signal%7D:%7Bcache:%22no-store%22%7D),late%5D);%20if(!r.ok)%7Bconst%20e=new%20Error(%22HTTP%20%22+r.status);e.st=r.status;throw%20e;%7D%20const%20b=await%20Promise.race(%5Br.arrayBuffer(),late%5D);%20let%20t=new%20TextDecoder(%22utf-8%22).decode(b);%20if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);%20return%20t;%7Dfinally%7BclearTimeout(tm);%7D%7D;%20const%20get=async%20u=%3E%7Blet%20last;for(let%20k=0;k%3C4;k++)%7Btry%7Breturn%20await%20get1(u);%7Dcatch(e)%7Blast=e;if(e&&e.st===404)break;retries++;await%20sleep(e&&(e.st===429%7C%7Ce.st===503)?5000*(k+1):1500*(k+1));%7D%7Dthrow%20last;%7D;%20let%20box=document.getElementById(%22__chusdvx%22);%20if(!box)%7Bbox=document.createElement(%22div%22);box.id=%22__chusdvx%22;box.style.cssText=%22position:fixed;z-index:999999;right:14px;top:14px;background:#10131f;color:#e7ecff;font:13px/1.5%20sans-serif;padding:12px%2016px;border-radius:10px;box-shadow:0%208px%2030px%20rgba(0,0,0,.5);border:1px%20solid%20#2a3050;max-width:340px%22;document.body.appendChild(box);%7D%20const%20say=t=%3E%7Bbox.innerHTML=t;%7D;%20try%7B%20say(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%EF%BC%88%E5%B7%AE%E5%88%86%E6%9B%B4%E6%96%B0%EF%BC%89%22);%20const%20genres=%5B%22pops%22,%22niconico%22,%22toho%22,%22variety%22,%22irodorimidori%22,%22gekimai%22,%22original%22%5D;%20const%20idRe=/%5C/chunithm%5C/(%5Cd%7B2%7D)%5C/js%5C/(%5Cd+)sort%5C.js/g;%20const%20all=new%20Map();%20for(const%20g%20of%20genres)%7Btry%7Bconst%20html=await%20get(%22https://sdvx.in/chunithm/sort/%22+g+%22.htm%22);let%20m;idRe.lastIndex=0;while((m=idRe.exec(html)))%7Ball.set(m%5B2%5D,m%5B1%5D);%7D%7Dcatch(e)%7B%7D%7D%20if(!all.size)%7Bsay(%22%E6%9B%B2%E3%83%AA%E3%82%B9%E3%83%88%E3%82%92%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%9B%E3%82%93%E3%81%A7%E3%81%97%E3%81%9F%E3%80%82%22);return;%7D%20let%20maxV=0;for(const%20f%20of%20all.values())%7Bconst%20v=parseInt(f,10);if(v%3EmaxV)maxV=v;%7D%20const%20lo=maxV-1;%20const%20targets=%5B...all.entries()%5D.filter((%5Bid,f%5D)=%3EparseInt(f,10)%3E=lo);%20say(%22%E6%9C%80%E6%96%B02%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3(v%22+lo+%22%E3%80%9Cv%22+maxV+%22)%E3%81%AE%20%22+targets.length+%22%20%E6%9B%B2%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%22);%20const%20map=%7B%7D;let%20done=0,fail=0;%20const%20titleRe=/var%20TITLE%5Cd+=%22(.*?)%22;/;%20const%20work=async(id,folder)=%3E%7Btry%7Bconst%20js=await%20get(%22https://sdvx.in/chunithm/%22+folder+%22/js/%22+id+%22sort.js%22);const%20m=js.match(titleRe);const%20title=m?clean(m%5B1%5D):%22%22;if(title)%7Bconst%20s=folder+%22/%22+id;map%5B%22id:%22+s%5D=%7Bt:title,EXP:s+%22exp%22,MAS:s+%22mst%22%7D;%7Dreturn%20true;%7Dcatch(e)%7Breturn%20false;%7D%7D;%20const%20CONC=4;%20let%20qi=0;%20const%20failed=%5B%5D;%20const%20prog=()=%3Esay(%22%E5%90%8D%E7%A7%B0%E3%82%92%E5%8F%96%E5%BE%97%E4%B8%AD%E2%80%A6%20%22+done+%22%20/%20%22+targets.length+(retries?%22%3Cbr%3E%3Csmall%3E%E9%80%9A%E4%BF%A1%E3%81%8C%E6%B7%B7%E3%82%93%E3%81%A7%E3%81%84%E3%82%8B%E3%81%9F%E3%82%81%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%EF%BC%88%22+retries+%22%20%E5%9B%9E%EF%BC%89%3C/small%3E%22:%22%22)+(failed.length?%22%3Cbr%3E%3Csmall%3E%E3%81%84%E3%81%A3%E3%81%9F%E3%82%93%E5%A4%B1%E6%95%97%EF%BC%9A%22+failed.length+%22%20%E6%9B%B2%EF%BC%88%E6%9C%80%E5%BE%8C%E3%81%AB%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E8%A9%A6%E3%81%97%E3%81%BE%E3%81%99%EF%BC%89%3C/small%3E%22:%22%22));%20const%20worker=async()=%3E%7Bwhile(qi%3Ctargets.length)%7Bconst%20p=targets%5Bqi++%5D;if(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);done++;prog();await%20sleep(50);%7D%7D;%20prog();%20await%20Promise.all(Array.from(%7Blength:CONC%7D,worker));%20if(failed.length)%7Bconst%20again=failed.splice(0);say(%22%E5%8F%96%E5%BE%97%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F%20%22+again.length+%22%20%E6%9B%B2%E3%82%92%E5%86%8D%E8%A9%A6%E8%A1%8C%E4%B8%AD%E2%80%A6%22);await%20sleep(3000);for(const%20p%20of%20again)%7Bif(!(await%20work(p%5B0%5D,p%5B1%5D)))failed.push(p);%7D%7D%20fail=failed.length;%20const%20rows=Object.values(map).map(x=%3E%7Bconst%20m=String(x.MAS%7C%7Cx.EXP).match(/%5E(%5Cd%7B2%7D)%5C/(%5Cd+)/);return%20m?%5Bx.t,m%5B1%5D,m%5B2%5D%5D:null;%7D).filter(Boolean);%20const%20info=%22%E2%9C%85%20%E5%8F%96%E5%BE%97%E5%AE%8C%E4%BA%86%EF%BC%9A%22+rows.length+%22%20%E6%9B%B2%22+(fail?%22%EF%BC%88%E5%8F%96%E5%BE%97%E5%A4%B1%E6%95%97%20%22+fail+%22%EF%BC%89%22:%22%22);%20await%20deliver(%7Bv:1,kind:%22map%22,mode:%22diff%22,at:Date.now(),rows%7D,map,%22chunithm-sdvx-map-diff.json%22,say,info);%20%7Dcatch(e)%7Bsay(%22%E3%82%A8%E3%83%A9%E3%83%BC:%20%22+e);%7D%20%7D)();">🔄 差分更新（最新2バージョンだけ・速い）</a> ← ブックマークバーへドラッグ</p>
       <p class="hint">※ ボタンは<b>クリックではなくドラッグ</b>でブックマーク登録 → sdvx.in 上で使います。<br>「差分更新」は最新2バージョンだけ取得するので速いです（古い曲は変化しないため）。読み込みは既存に追記されるので、古い曲が消えることはありません。全部作り直したいときだけ「全件取得」を使ってください。</p>
       <p class="hint bmModeNote"></p>
 
@@ -639,7 +651,7 @@ const normRaw = s => (s||"")
   .replace(/[^\p{Letter}\p{Number}]/gu,"");       // 残った記号類をすべて除去
 
 let songs = [];          // {title, img, const, diff}
-let sdvxMap = {};        // normTitle -> {t, EXP,MAS,ULT,...}
+let sdvxMap = {};        // normTitle -> [{t, EXP, MAS}, ...]（大文字小文字・記号違いの同名曲は複数になる）
 let scores = {};         // "chunirec_id_DIFF" -> {score, rank}
 const LS_SCORE = "chuni_scores_v1";
 let activeDiffs = new Set(["MAS","ULT"]);
@@ -707,19 +719,41 @@ function loadMap(){
   sdvxRaw={};
   return {};
 }
-// 対応表のキーを現行のnorm()で貼り直す（スニペット側の正規化差を吸収）
+// 対応表を「正規化した曲名 → 候補の一覧」に組み直す。
+// 新形式（キーが "id:01/01039"＝sdvx.inの譜面ごと）を優先し、旧形式（曲名キー）は同じ譜面が無い時だけ使う。
+// 旧形式は大文字小文字違いの同名曲（例 FLOWER と Flower）を1つに潰してしまうため。
+const sdvxStemOf = e => String((e&&(e.MAS||e.EXP))||"").replace(/(mst|exp)$/,"");
 function rekeyMap(obj){
   if(!obj||typeof obj!=="object")return {};
-  const out={};
-  for(const k in obj){
-    const e=obj[k];
-    const t=(e&&e.t)?e.t:k;       // 元の曲名があればそれを再正規化
-    out[norm(t)]=e;
-  }
+  const out={}, seen=new Set();
+  const add=(e,t)=>{
+    const st=sdvxStemOf(e); if(st && seen.has(st)) return; if(st) seen.add(st);
+    const k=norm(t); (out[k]||(out[k]=[])).push(Object.assign({t}, e));
+  };
+  for(const k in obj){ if(k.startsWith("id:")){ const e=obj[k]; if(e&&e.t) add(e,e.t); } }
+  for(const k in obj){ if(!k.startsWith("id:")){ const e=obj[k]; if(e&&typeof e==="object") add(e,e.t||k); } }
   return out;
 }
+function isLegacyMap(){ return Object.keys(sdvxRaw).some(k=>!k.startsWith("id:")); }
 function persistMap(obj){
   try{localStorage.setItem(LS_KEY, JSON.stringify(obj));return true;}catch(e){return false;}
+}
+// 全件取得の結果で対応表を作り直す。取得に失敗した曲の分だけ、古い対応表から残す
+function replaceSdvxFull(obj){
+  const newStems=new Set(Object.values(obj).map(sdvxStemOf));
+  const newTitles=new Set(Object.values(obj).map(e=>norm(e.t)));
+  const keep={};
+  for(const k in sdvxRaw){
+    const e=sdvxRaw[k], st=sdvxStemOf(e);
+    if(newStems.has(st)) continue;                                   // 新しい方にある
+    if(!k.startsWith("id:") && newTitles.has(norm((e&&e.t)||k))) continue;   // 旧形式で同名の新データがある（誤った紐づけの可能性）
+    keep[k]=e;
+  }
+  sdvxRaw=Object.assign(keep, obj);
+  const ok=persistMap(sdvxRaw);
+  sdvxMap=rekeyMap(sdvxRaw);
+  sortSongs();
+  return {total:Object.keys(sdvxRaw).length, persisted:ok};
 }
 // 新しい対応表(obj)を既存にマージして反映（差分更新・全件どちらも対応）
 // 返り値: {total, added}
@@ -780,7 +814,7 @@ function applyConstData(data, persist, raw){
 }
 // sdvx.in の譜面ID（例 "10/10263mst" → 10263）。sdvx.in は実装順に譜面を追加するので、実装順の目安になる
 function sdvxOrder(s){
-  const st = sdvxStem(s.title,"MAS") || sdvxStem(s.title,"EXP");
+  const st = sdvxStem(s.title,"MAS",s) || sdvxStem(s.title,"EXP",s);
   const m = st && String(st).match(/(\d+)(?:mst|exp)$/);
   return m ? +m[1] : Infinity;   // 対応表に無い曲（sdvx.in未掲載の新曲など）は後ろへ
 }
@@ -846,11 +880,31 @@ async function init(){
 }
 
 /* ---------- build sdvx url ---------- */
-function sdvxStem(title, diff){
+const strictTitle = s => (s||"").normalize("NFKC").replace(/\s+/g," ").trim();
+const folderOf = e => { const m=sdvxStemOf(e).match(/^(\d{2})\//); return m ? +m[1] : 99; };
+// 曲名に合う sdvx.in の譜面を選ぶ。返り値 {e, why}
+//   候補が1つ → それ / 複数（大文字小文字や記号だけ違う別曲）→ 曲名が完全に同じもの → それも無ければ収録バージョンが近いもの
+function pickSdvx(title, song){
   const nq = norm(title);
-  let e = sdvxMap[nq];
-  if(!e && aliasMap[nq]) e = sdvxMap[aliasMap[nq]];   // 手動別名でフォールバック
-  if(!e) return null;
+  let list = sdvxMap[nq];
+  if(!list && aliasMap[nq]) list = sdvxMap[aliasMap[nq]];   // 手動別名でフォールバック
+  if(!list || !list.length) return null;
+  if(list.length===1) return {e:list[0], why:"one"};
+  const st = strictTitle(title);
+  const ex = list.filter(c=>strictTitle(c.t)===st);
+  if(ex.length===1) return {e:ex[0], why:"exact"};
+  const pool = ex.length ? ex : list;
+  const vi = song ? VERSION_ORDER.indexOf(song.version==null ? "" : song.version) : -1;
+  if(vi>=0){
+    const best = pool.slice().sort((a,b)=>Math.abs(folderOf(a)-(vi+1))-Math.abs(folderOf(b)-(vi+1)))[0];
+    return {e:best, why:"version"};
+  }
+  return {e:pool[0], why:"guess"};
+}
+function sdvxStem(title, diff, song){
+  const pk = pickSdvx(title, song);
+  if(!pk) return null;
+  const e = pk.e;
   if(diff==="ULT"){
     // ULTは「ult/<id>ult」。IDはMAS/EXPと共通なのでそこから生成する。
     const base = e.MAS || e.EXP || e.ULT;
@@ -906,7 +960,7 @@ function render(){
     if(!groups.has(key)) groups.set(key,[]);
     groups.get(key).push(s);
     shown++;
-    if(hasMap && sdvxStem(s.title,s.diff)) matched++;
+    if(hasMap && sdvxStem(s.title,s.diff,s)) matched++;
   }
 
   // status
@@ -962,7 +1016,7 @@ function jacketCands(img){
 function tileHtml(s, hasMap){
   const d = s.diff;                    // EXP/MAS/ULT
   const cls = d.toLowerCase();
-  const stem = hasMap ? sdvxStem(s.title,d) : null;
+  const stem = hasMap ? sdvxStem(s.title,d,s) : null;
   const linked = !!stem;
   const dataAttr = linked ? ('data-stem="'+stem+'"') : 'data-fallback="1"';
   const sc = scoreOf(s);
@@ -1161,7 +1215,7 @@ document.getElementById("freset").onclick=()=>{
 /* ---------- modal ---------- */
 const scrim=document.getElementById("scrim");
 document.getElementById("setupBtn").onclick=()=>{
-  document.getElementById("paste").value = Object.keys(sdvxMap).length? JSON.stringify(sdvxMap):"";
+  document.getElementById("paste").value = Object.keys(sdvxRaw).length? JSON.stringify(sdvxRaw):"";
   scrim.dataset.open="1";
 };
 document.getElementById("closeBtn").onclick=()=>scrim.dataset.open="0";
@@ -1566,9 +1620,9 @@ function buildImport(p){
       const [t,folder,id]=r;
       if(!str(t,300)||!t||!/^\d{2}$/.test(folder)||!/^\d{3,7}$/.test(id)) throw new Error("対応表が不正");
       const stem=folder+"/"+id;
-      out[k0(t)]={t,EXP:stem+"exp",MAS:stem+"mst"};
+      out["id:"+stem]={t,EXP:stem+"exp",MAS:stem+"mst"};   // 譜面ごとに保存（同名の別曲を潰さない）
     }
-    return {kind:"map",data:out,count:p.rows.length,label:p.mode==="diff"?"sdvx.in（差分）":"sdvx.in（全件）"};
+    return {kind:"map",mode:p.mode==="diff"?"diff":"full",data:out,count:p.rows.length,label:p.mode==="diff"?"sdvx.in（差分）":"sdvx.in（全件）"};
   }
   throw new Error("種類が不明");
 }
@@ -1586,8 +1640,13 @@ async function handleImportHash(){
     if(!window.confirm(what+" を受け取りました。読み込みますか？\n（心当たりがない場合は「キャンセル」を押してください）")) { toast("読み込みを取り消しました"); return false; }
   }
   if(imp.kind==="scores"){ saveScores(imp.data); markChanged("scores"); }
-  else { mergeSdvx(imp.data); markChanged("map"); }
+  else { if(imp.mode==="full") replaceSdvxFull(imp.data); else mergeSdvx(imp.data); markChanged("map"); }
   toast("✅ "+what+"を読み込みました");
+  if(imp.kind==="map"){
+    // 定数表の読み込みを待ってから、同名の別曲があるか知らせる
+    setTimeout(()=>{ const r=mapReport(); const n=r.multi.filter(x=>x.pk.why!=="exact").length;
+      if(n) toast("⚠ 曲名だけでは区別できない同名の別曲が "+n+" 件あります。⚙設定の「対応表のチェック」で確認してください", true); }, 4000);
+  }
   return true;
 }
 window.addEventListener("hashchange",()=>{ if(location.hash.startsWith("#import=")) handleImportHash().then(ok=>{ if(ok) render(); }); });
@@ -1602,6 +1661,50 @@ window.addEventListener("hashchange",()=>{ if(location.hash.startsWith("#import=
     ? "このリンカー（<code>"+escapeHtml(u)+"</code>）を開くブックマークレットになっています。取得後、自動でこのリンカーが開いて読み込まれます。"
     : "⚠ このリンカーは https のURLで開かれていないため、ブックマークレットは<b>ファイルをダウンロードする方式</b>になります。GitHub Pages などのURLで開いたリンカーから登録し直すと、自動読み込みになります。"; });
 })();
+
+/* ---------- 対応表のチェック ---------- */
+function mapReport(){
+  const multi=[], loose=[], none=[];
+  const seen=new Set();
+  for(const s of baseSongs){
+    const key=s.title+"\u0000"+(s.version||"");
+    if(seen.has(key)) continue; seen.add(key);
+    const nq=norm(s.title);
+    const list=sdvxMap[nq] || (aliasMap[nq] && sdvxMap[aliasMap[nq]]);
+    if(!list || !list.length){ none.push(s); continue; }
+    const pk=pickSdvx(s.title, s);
+    if(list.length>1) multi.push({s, list, pk});
+    else if(strictTitle(list[0].t)!==strictTitle(s.title)) loose.push({s, pk});
+  }
+  return {multi, loose, none, legacy:isLegacyMap()};
+}
+document.getElementById("mapCheck").onclick=()=>{
+  const out=document.getElementById("mapReport");
+  if(!Object.keys(sdvxRaw).length){ out.innerHTML='<span class="bad">対応表がまだありません</span>'; return; }
+  if(!baseSongs.length){ out.innerHTML='<span class="bad">定数表データがまだありません</span>'; return; }
+  const r=mapReport();
+  const link=stem=>'<a href="'+escapeAttr(sdvxUrl(stem))+'" target="_blank" rel="noopener">'+escapeHtml(stem)+'</a>';
+  const why={exact:"曲名が完全一致", version:"収録バージョンから推定（要確認）", guess:"推定（要確認）", one:""};
+  let html="";
+  if(r.legacy) html+='<p class="warn">⚠ 古い形式の対応表が含まれています。古い形式では FLOWER と Flower のような同名の別曲を区別できず、間違ったリンクになることがあります。<b>新しい「⚡ 全件取得」ブックマークレットで取り直してください</b>（下の「対応表の更新」から登録し直し）。</p>';
+  html+='<h4>同名の別曲（'+r.multi.length+' 曲）</h4>';
+  if(!r.multi.length) html+='<p class="hint">ありません。</p>';
+  for(const x of r.multi){
+    html+='<div class="it"><b>'+escapeHtml(x.s.title)+'</b>（'+escapeHtml(verLabel(x.s.version||""))+'）→ '
+      +x.list.map(c=>{ const st=sdvxStemOf(c), on=(c===x.pk.e);
+        return '<span class="'+(on?'sel':'')+'">'+(on?'✔ ':'')+escapeHtml(c.t)+'：'+link(c.MAS||c.EXP)+'</span>'; }).join(' ／ ')
+      +'<br><span class="hint">'+why[x.pk.why]+'</span></div>';
+  }
+  html+='<h4>曲名の表記が少し違うまま紐づいた曲（'+r.loose.length+' 曲）</h4>';
+  if(!r.loose.length) html+='<p class="hint">ありません。</p>';
+  else html+='<p class="hint">記号や大文字小文字の違いを無視して紐づけた曲です。ほとんどは問題ありませんが、別の曲になっていないかリンクで確認できます。</p>';
+  for(const x of r.loose){
+    html+='<div class="it">定数表：<b>'+escapeHtml(x.s.title)+'</b><br>sdvx.in：'+escapeHtml(x.pk.e.t)+'：'+link(x.pk.e.MAS||x.pk.e.EXP)+'</div>';
+  }
+  html+='<h4>sdvx.in に見つからない曲（'+r.none.length+' 曲）</h4>';
+  html+= r.none.length ? '<p class="hint">'+r.none.slice(0,200).map(s=>escapeHtml(s.title)).join("、")+(r.none.length>200?" …":"")+'</p>' : '<p class="hint">ありません。</p>';
+  out.innerHTML=html;
+};
 
 /* ---------- ブックマークレットのコードをコピー（iPhone/iPad登録用） ---------- */
 function copyText(t){
