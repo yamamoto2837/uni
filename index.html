@@ -171,9 +171,9 @@
     background-size:200% 100%;animation:ajc 3s linear infinite;color:#fff}
   @keyframes ajc{to{background-position:200% 0}}
   /* ---- 目印（旗） ---- */
-  .pf{position:absolute;top:5px;right:5px;display:flex;gap:2px;z-index:3;pointer-events:none}
-  .pf i{display:block;width:10px;height:15px;background:var(--c);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%);
-    box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  /* 旗は白フチ＋黒い外側の二重の縁取り（どんな色のジャケットでも見えるように） */
+  .pf{position:absolute;top:4px;right:4px;display:flex;gap:1px;z-index:3;pointer-events:none}
+  .pf svg{display:block;width:21px;height:30px;overflow:visible}
   .pinbtn.on{border-color:#ff4d6d;background:rgba(255,77,109,.18);color:#fff}
   .modebar{display:none;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 20px;max-width:1400px;margin:0 auto;font-size:13px}
   header.pinmode{border-bottom-color:rgba(255,77,109,.6)}
@@ -300,8 +300,8 @@
     .badge{font-size:8px;padding:1px 3px;left:2px;top:2px;border-radius:3px;letter-spacing:0}
     .cst{font-size:9px;padding:0 3px;right:2px;bottom:2px;border-radius:3px}
     .lamp{font-size:8px;padding:1px 3px;left:2px;bottom:2px;border-radius:3px;letter-spacing:0}
-    .pf{top:2px;right:2px;gap:1px}
-    .pf i{width:8px;height:12px}
+    .pf{top:1px;right:1px;gap:0}
+    .pf svg{width:12px;height:17px}
     .pinbtn{order:2;flex:0 0 auto;padding:6px 11px}
     .modebar{padding:7px 10px;font-size:12px}
     .modebar .cur{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
@@ -667,9 +667,12 @@ function pinName(k){ const n=(pinsData.names[k]||"").trim(); return n || PIN_COL
 // 譜面ごとのキー（公式の楽曲idx＋難易度。idxが無い時は曲名）
 function pinKey(s){ return (s.idx!=null && s.idx!=="") ? "i:"+s.idx+"_"+s.diff : "t:"+norm(s.title)+"_"+s.diff; }
 function pinsOf(s){ return pinsData.pins[pinKey(s)] || ""; }
+const FLAG_PATH = "M1.5 1.5H8.5V13.5L5 10.6L1.5 13.5Z";
 function flagsHtml(p){
   if(!p) return "";
-  return '<span class="pf">'+PIN_COLORS.filter(x=>p.includes(x.k)).map(x=>'<i style="--c:'+x.c+'"></i>').join("")+'</span>';
+  return '<span class="pf">'+PIN_COLORS.filter(x=>p.includes(x.k)).map(x=>
+    '<svg viewBox="-1 -1 12 17"><path d="'+FLAG_PATH+'" fill="none" stroke="#000" stroke-width="4.2" stroke-linejoin="round"/>'
+    +'<path d="'+FLAG_PATH+'" fill="'+x.c+'" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke"/></svg>').join("")+'</span>';
 }
 let scoreMode = "off";                        // rank=ランク特大 / score=スコア / off=非表示
 function applyScoreMode(){ const m=document.getElementById("main"); m.classList.remove("m-off","m-rank","m-score"); m.classList.add("m-"+scoreMode); }
