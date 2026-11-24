@@ -254,6 +254,9 @@
   .gchip{cursor:pointer;user-select:none;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;
     border:1px solid var(--line);background:var(--panel);color:var(--muted);transition:.15s}
   .gchip[data-on="1"]{background:rgba(52,231,228,.16);border-color:var(--cyan);color:#fff}
+  .sortrow{display:flex;align-items:flex-start;gap:10px;margin-top:6px}
+  .sortrow .slab{flex:none;width:3.5em;padding-top:15px;font-size:12px;color:var(--muted);font-weight:700}
+  .sortrow .genre-box{margin-top:8px}
 
   .center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;    min-height:50vh;text-align:center;color:var(--muted)}
   .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--cyan);
@@ -389,6 +392,13 @@
       <button class="close" id="fclose">×</button>
     </div>
     <div class="mb">
+      <h3>並び替え</h3>
+      <div class="sortrow"><span class="slab">区切り</span>
+        <div id="groupBox" class="genre-box seg"><span class="gchip" data-g="const">定数ごと（14.2 など）</span><span class="gchip" data-g="level">難易度ごと（14・14+ など）</span></div></div>
+      <div class="sortrow"><span class="slab">順番</span>
+        <div id="orderBox" class="genre-box seg"><span class="gchip" data-o="default">標準（実装順）</span><span class="gchip" data-o="desc">スコア高い順</span><span class="gchip" data-o="asc">スコア低い順</span></div></div>
+      <p class="hint">それぞれの枠の中で並べ替えます。スコアのない譜面は、どちらの順番でも枠の最後に並びます。</p>
+
       <h3>目印</h3>
       <div id="pinBox" class="genre-box"></div>
       <div class="row" style="margin-top:8px"><button class="btn" id="pinClearSel">選択を解除</button></div>
@@ -461,7 +471,7 @@
 <div class="scrim" id="scrim">
   <div class="modal">
     <div class="mh">
-      <h2>設定 <span style="font-size:11px;color:var(--muted);font-weight:500">版 2026-10-26b</span></h2>
+      <h2>設定 <span style="font-size:11px;color:var(--muted);font-weight:500">版 2026-11-24</span></h2>
       <button class="close" id="closeBtn">×</button>
     </div>
     <div class="mb">
@@ -629,6 +639,19 @@ function flagsHtml(p){
   return '<span class="pf">'+PIN_COLORS.filter(x=>p.includes(x.k)).map(x=>
     '<svg viewBox="-1 -1 12 17"><path d="'+FLAG_PATH+'" fill="none" stroke="#000" stroke-width="4.2" stroke-linejoin="round"/>'
     +'<path d="'+FLAG_PATH+'" fill="'+x.c+'" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke"/></svg>').join("")+'</span>';
+}
+/* ---------- 並び替え（区切り：定数ごと/難易度ごと、順番：標準/スコア高い順/スコア低い順） ---------- */
+const LS_SORT = "chuni_sort_v1";
+let groupMode = "const", orderMode = "default";
+try{ const v=JSON.parse(localStorage.getItem(LS_SORT)||"null");
+  if(v){ if(v.g==="level") groupMode="level"; if(v.o==="desc"||v.o==="asc") orderMode=v.o; } }catch(e){}
+function saveSort(){ try{ localStorage.setItem(LS_SORT, JSON.stringify({g:groupMode,o:orderMode})); }catch(e){} }
+// 定数 → 難易度表記（14.0〜14.4 → "14"、14.5〜14.9 → "14+"）
+function levelKey(c){ const t=Math.round(c*10); return Math.floor(t/10) + (t%10>=5 ? "+" : ""); }
+const groupKeyNum = k => parseFloat(k) + (String(k).endsWith("+") ? 0.5 : 0);
+function syncSortChips(){
+  document.querySelectorAll("#groupBox .gchip").forEach(c=>c.dataset.on = c.dataset.g===groupMode ? "1":"0");
+  document.querySelectorAll("#orderBox .gchip").forEach(c=>c.dataset.on = c.dataset.o===orderMode ? "1":"0");
 }
 let scoreMode = "off";                        // rank=ランク特大 / score=スコア / off=非表示
 function applyScoreMode(){ const m=document.getElementById("main"); m.classList.remove("m-off","m-rank","m-score"); m.classList.add("m-"+scoreMode); }
@@ -907,7 +930,7 @@ function render(){
         if(filterScoreMax!=null && sc.score > filterScoreMax) continue;
       }
     }
-    const key = s.const.toFixed(1);
+    const key = groupMode==="level" ? levelKey(s.const) : s.const.toFixed(1);
     if(!groups.has(key)) groups.set(key,[]);
     groups.get(key).push(s);
     shown++;
@@ -923,6 +946,7 @@ function render(){
     st.innerHTML = '<span>表示中 <b>'+shown+'</b> 譜面</span>'+
       '<span>sdvxマッチ <b>'+matched+'</b> / '+shown+'</span>'+
       (filterActive()? '<span style="color:var(--cyan)">● 絞り込み中</span>':'')+
+      (orderMode!=="default"||groupMode!=="const" ? '<span style="color:var(--cyan)">● '+(groupMode==="level"?"難易度ごと":"定数ごと")+(orderMode==="desc"?"・スコア高い順":orderMode==="asc"?"・スコア低い順":"")+'</span>' : '')+
       '<span class="st-hint" style="color:#6b73a0">（未マッチはsdvxトップへフォールバック）</span>';
   }
 
@@ -931,7 +955,16 @@ function render(){
     return;
   }
 
-  const sortedKeys = [...groups.keys()].sort((a,b)=>parseFloat(b)-parseFloat(a));
+  const sortedKeys = [...groups.keys()].sort((a,b)=>groupKeyNum(b)-groupKeyNum(a));
+  // 枠の中をスコアで並べ替え（同点は標準の並び。スコアなしは常に最後）
+  if(orderMode!=="default"){
+    const dir = orderMode==="desc" ? -1 : 1;
+    for(const list of groups.values()){
+      const dec = list.map((s,i)=>{ const sc=scoreOf(s); return {s,i,v: sc ? Number(sc.score) : null}; });
+      dec.sort((a,b)=> (a.v==null)-(b.v==null) || (a.v!=null && dir*(a.v-b.v)) || (a.i-b.i));
+      for(let i=0;i<dec.length;i++) list[i]=dec[i].s;
+    }
+  }
   // 一度に全部作ると重いので、最初の画面分だけすぐ描いて、残りは少しずつ追加する
   const token = ++renderToken;
   const prevH = main.offsetHeight;
@@ -1084,6 +1117,7 @@ function buildConstOptions(){
 }
 const fscrim=document.getElementById("fscrim");
 document.getElementById("filterBtn").onclick=()=>{
+  syncSortChips();
   buildPinChips();
   buildConstOptions();
   buildGenreChips();
@@ -1096,6 +1130,11 @@ document.getElementById("filterBtn").onclick=()=>{
 };
 document.getElementById("fclose").onclick=()=>fscrim.dataset.open="0";
 fscrim.addEventListener("click",e=>{if(e.target===fscrim)fscrim.dataset.open="0";});
+// 並び替えは「どれか1つを選ぶ」ボタン
+["groupBox","orderBox"].forEach(id=>document.getElementById(id).addEventListener("click",e=>{
+  const c=e.target.closest(".gchip"); if(!c) return;
+  document.querySelectorAll("#"+id+" .gchip").forEach(x=>x.dataset.on = x===c ? "1":"0");
+}));
 document.getElementById("genreBox").addEventListener("click",e=>{
   const c=e.target.closest(".gchip"); if(!c)return;
   c.dataset.on = c.dataset.on==="1"?"0":"1";
@@ -1147,12 +1186,18 @@ document.getElementById("fapply").onclick=()=>{
   filterScoreMin=slo; filterScoreMax=shi;
   const pon=[...document.querySelectorAll("#pinBox .gchip")].filter(c=>c.dataset.on==="1").map(c=>c.dataset.p);
   filterPins = pon.length ? new Set(pon) : null;
+  const gsel=document.querySelector('#groupBox .gchip[data-on="1"]'), osel=document.querySelector('#orderBox .gchip[data-on="1"]');
+  groupMode = gsel ? gsel.dataset.g : "const";
+  orderMode = osel ? osel.dataset.o : "default";
+  saveSort();
+  if(orderMode!=="default" && !Object.keys(scores).length) toast("スコアがまだ読み込まれていないので、並びは変わりません", true);
   fscrim.dataset.open="0";
   render();
 };
 document.getElementById("freset").onclick=()=>{
   filterCmin=null; filterCmax=null; activeGenres=null; activeVersions=null;
   filterLamps=null; filterRanks=null; filterScoreMin=null; filterScoreMax=null; filterPins=null;
+  groupMode="const"; orderMode="default"; saveSort(); syncSortChips();
   buildPinChips();
   document.getElementById("cmin").value="";
   document.getElementById("cmax").value="";
